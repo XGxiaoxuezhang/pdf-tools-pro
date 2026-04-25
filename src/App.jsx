@@ -1,0 +1,68 @@
+import React, { useEffect } from "react";
+import { HashRouter, Routes, Route, useNavigate } from "react-router-dom";
+import Layout from "./components/Layout";
+import Home from "./pages/Home";
+import PdfMerge from "./pages/PdfMerge";
+import PdfSplit from "./pages/PdfSplit";
+import PdfViewer from "./pages/PdfViewer";
+import PdfConvert from "./pages/PdfConvert";
+import PdfCompress from "./pages/PdfCompress";
+import PdfSecure from "./pages/PdfSecure";
+import TaskHistory from "./pages/TaskHistory";
+import About from "./pages/About";
+
+function PlaceholderPage({ title }) {
+  return (
+    <div className="flex h-full items-center justify-center p-6 text-slate-500">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+        <p className="mt-2">正在开发中，敬请期待...</p>
+      </div>
+    </div>
+  );
+}
+
+function ExternalFileListener() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onOpenExternalFile) {
+      window.electronAPI.onOpenExternalFile(async (filePath) => {
+        try {
+          const ext = filePath.toLowerCase().split('.').pop();
+          if (ext === 'pdf') {
+            const buffer = await window.electronAPI.readFile(filePath);
+            const fileName = filePath.split('\\').pop() || filePath.split('/').pop();
+            const fileObj = new File([buffer], fileName, { type: "application/pdf" });
+            navigate("/viewer", { state: { externalFile: fileObj, externalBuffer: buffer } });
+          } else {
+            navigate("/convert", { state: { externalFilePath: filePath } });
+          }
+        } catch (err) {
+          console.error("Failed to load external file", err);
+        }
+      });
+    }
+  }, [navigate]);
+  return null;
+}
+
+export default function App() {
+  return (
+    <HashRouter>
+      <Layout>
+        <ExternalFileListener />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/merge" element={<PdfMerge />} />
+          <Route path="/split" element={<PdfSplit />} />
+          <Route path="/viewer" element={<PdfViewer />} />
+          <Route path="/compress" element={<PdfCompress />} />
+          <Route path="/convert" element={<PdfConvert />} />
+          <Route path="/secure" element={<PdfSecure />} />
+          <Route path="/history" element={<TaskHistory />} />
+          <Route path="/about" element={<About />} />
+        </Routes>
+      </Layout>
+    </HashRouter>
+  );
+}

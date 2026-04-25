@@ -1,0 +1,76 @@
+{
+  "name": "pdf-tools-pro",
+  "productName": "全民好用pdf",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"cross-env NODE_ENV=development electron .\"",
+    "build": "vite build && electron-builder",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.pdf-tools-pro.app",
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo.png"
+    },
+    "directories": {
+      "output": "dist-electron"
+    },
+    "fileAssociations": [
+      {
+        "ext": "pdf",
+        "name": "PDF Document",
+        "description": "PDF Document",
+        "role": "Editor",
+        "icon": "public/logo.png"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "python_engine/converter.exe"
+    ],
+    "extraResources": [
+      {
+        "from": "python_engine/converter.exe",
+        "to": "python_engine/converter.exe"
+      }
+    ]
+  },
+  "dependencies": {
+    "lucide-react": "^1.11.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-pdf": "^10.4.1",
+    "react-router-dom": "^7.14.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.5.0",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.0.10"
+  }
+}
