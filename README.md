@@ -64,7 +64,7 @@
 
 ### 1. 克隆代码库
 ```bash
-git clone https://github.com/您的用户名/pdf-tools-pro.git
+git clone https://github.com/XGxiaoxuezhang/pdf-tools-pro.git
 cd pdf-tools-pro
 ```
 
