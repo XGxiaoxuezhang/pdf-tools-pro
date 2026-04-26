@@ -29,8 +29,8 @@ function NavItem({ icon = "file", label = "菜单", to = "/" }) {
 
 export default function Layout({ children }) {
   return (
-    <div className="min-h-screen bg-[#dfe5ee] p-6 text-slate-900">
-      <div className="mx-auto flex h-[calc(100vh-48px)] min-h-[760px] max-w-[1480px] flex-col overflow-hidden rounded-[28px] border border-white/70 bg-[#f7f8fb] shadow-2xl shadow-slate-900/20">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#f7f8fb] text-slate-900">
+      <div className="flex flex-col h-full overflow-hidden">
         <div className="drag-region flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 pl-4 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <img src="./logo.png" alt="全民好用PDF Logo" className="h-8 object-contain drop-shadow-sm" />
