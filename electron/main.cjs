@@ -202,6 +202,8 @@ ipcMain.handle('convertDocument', async (event, mode, inputPath, outputPath, ext
       }
     });
   });
+});
+
 ipcMain.handle('print:pdf', async (event, pdfDataArray, options = {}) => {
   // Write the PDF bytes to a temp file
   const tmpPath = path.join(os.tmpdir(), `pdf_print_${Date.now()}.pdf`);
