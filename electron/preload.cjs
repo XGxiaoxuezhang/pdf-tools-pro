@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   convertDocument: (mode, inputPath, outputPath, extraArg) => ipcRenderer.invoke('convertDocument', mode, inputPath, outputPath, extraArg),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
   onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (_event, filePath) => callback(filePath)),
+  printPdf: (pdfDataArray, options) => ipcRenderer.invoke('print:pdf', pdfDataArray, options),
 });

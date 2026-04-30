@@ -16,7 +16,7 @@ export default function About() {
           
           <img src="./logo.png" alt="全民好用PDF Logo" className="h-28 object-contain drop-shadow-md mb-6" />
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">全民好用 PDF</h2>
-          <div className="mt-2 text-sm text-slate-500 font-medium">版本 1.0.0 (桌面专业版)</div>
+          <div className="mt-2 text-sm text-slate-500 font-medium">版本 1.0.2 (桌面专业版)</div>
           
           <div className="mt-8 rounded-2xl bg-red-50 text-red-700 px-6 py-4 inline-flex items-center gap-3">
             <Icon name="user" size={20} />

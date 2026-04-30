@@ -29,7 +29,11 @@ const iconPaths = {
   arrowLeft: "M19 12H5 M12 19l-7-7 7-7",
   trash: "M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
   arrowUp: "M12 19V5 M5 12l7-7 7 7",
-  arrowDown: "M12 5v14 M19 12l-7 7-7-7"
+  arrowDown: "M12 5v14 M19 12l-7 7-7-7",
+  printer: "M6 9V2h12v7 M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2 M6 14h12v8H6z",
+  layers: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
+  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  code: "M16 18l6-6-6-6 M8 6L2 12l6 6"
 };
 
 export default function Icon({ name = "file", size = 20, className = "" }) {

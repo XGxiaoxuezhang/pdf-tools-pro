@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs/promises');
+const fsSync = require('fs');
+const os = require('os');
 const { spawn } = require('child_process');
 
 // Removed squirrel startup as we use electron-builder
@@ -200,4 +202,52 @@ ipcMain.handle('convertDocument', async (event, mode, inputPath, outputPath, ext
       }
     });
   });
+ipcMain.handle('print:pdf', async (event, pdfDataArray, options = {}) => {
+  // Write the PDF bytes to a temp file
+  const tmpPath = path.join(os.tmpdir(), `pdf_print_${Date.now()}.pdf`);
+  try {
+    await fs.writeFile(tmpPath, Buffer.from(pdfDataArray));
+
+    return await new Promise((resolve) => {
+      // Open a hidden BrowserWindow that loads the PDF and prints it
+      const printWin = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          plugins: true,
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+
+      printWin.loadURL(`file://${tmpPath}`);
+
+      printWin.webContents.on('did-finish-load', () => {
+        printWin.webContents.print(
+          {
+            silent: options.silent || false,      // false = show print dialog
+            printBackground: true,
+            deviceName: options.deviceName || '',
+          },
+          (success, reason) => {
+            printWin.destroy();
+            try { fsSync.unlinkSync(tmpPath); } catch (_) {}
+            if (success) {
+              resolve({ success: true });
+            } else {
+              resolve({ success: false, reason });
+            }
+          }
+        );
+      });
+
+      printWin.webContents.on('did-fail-load', () => {
+        printWin.destroy();
+        try { fsSync.unlinkSync(tmpPath); } catch (_) {}
+        resolve({ success: false, reason: 'failed-to-load-pdf' });
+      });
+    });
+  } catch (err) {
+    return { success: false, reason: err.message };
+  }
 });
+
