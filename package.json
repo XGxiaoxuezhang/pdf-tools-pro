@@ -2,7 +2,7 @@
   "name": "pdf-tools-pro",
   "productName": "全民好用PDF桌面版",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -37,8 +37,20 @@
     },
     "files": [
       "dist/**/*",
+      "!dist/*.zip",
+      "!dist-electron{,/**}",
       "electron/**/*",
-      "python_engine/converter.exe"
+      "!node_modules/@napi-rs{,/**}",
+      "!node_modules/**/{test,tests,__tests__,example,examples,docs,doc,CHANGELOG,changelog,README,readme}.{md,txt,js,ts}",
+      "!node_modules/**/*.map",
+      "!node_modules/**/*.d.ts",
+      "!node_modules/**/*.flow",
+      "!node_modules/**/.github",
+      "!node_modules/**/.eslintrc*",
+      "!node_modules/**/.prettierrc*",
+      "!node_modules/**/tsconfig*",
+      "!node_modules/**/*.ts",
+      "!node_modules/**/*.tsx"
     ],
     "extraResources": [
       {

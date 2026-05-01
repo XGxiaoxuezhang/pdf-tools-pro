@@ -187,19 +187,67 @@ export default function Home() {
           </div>
         </section>
 
-        <aside className="hidden min-h-0 flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm xl:flex">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-black">任务队列</h2>
-              <p className="mt-1 text-xs text-slate-500">当前处理进度</p>
+        <aside className="hidden min-h-0 flex-col gap-5 overflow-hidden xl:flex" style={{ width: 360 }}>
+          {/* Quick actions */}
+          <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-black">快速操作</h2>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {[
+                { icon: "merge", label: "合并 PDF", to: "/merge" },
+                { icon: "scissors", label: "拆分 PDF", to: "/split" },
+                { icon: "zap", label: "压缩 PDF", to: "/compress" },
+                { icon: "lock", label: "加密 PDF", to: "/secure" },
+              ].map((item) => (
+                <Link key={item.label} to={item.to} className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-3 transition hover:border-red-200 hover:bg-red-50/50">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm ring-1 ring-slate-100 group-hover:text-red-600">
+                    <Icon name={item.icon} size={18} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700 group-hover:text-red-600">{item.label}</span>
+                </Link>
+              ))}
             </div>
-            <button onClick={() => clearTasks()} type="button" className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 transition">清空</button>
           </div>
 
-          <div className="mt-5 space-y-3 overflow-auto pr-1">
-            {tasks.length > 0 ? tasks.slice(0, 5).map((task, index) => <TaskItem key={`${task.id || "task"}-${index}`} task={task} />) : (
-              <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">暂无处理任务</div>
-            )}
+          {/* Tips */}
+          <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-black">使用提示</h2>
+            <div className="mt-4 space-y-3">
+              {[
+                { icon: "zap", text: "所有操作均在本地完成，文件不会上传到云端" },
+                { icon: "file", text: "支持拖拽文件到页面直接开始处理" },
+                { icon: "search", text: "使用右上角搜索框快速查找工具" },
+              ].map((tip, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm text-slate-600">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                    <Icon name={tip.icon} size={14} />
+                  </div>
+                  <span>{tip.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Task queue */}
+          <div className="flex min-h-0 flex-1 flex-col rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-black">任务队列</h2>
+                <p className="mt-1 text-xs text-slate-500">当前处理进度</p>
+              </div>
+              {tasks.length > 0 && (
+                <button onClick={() => clearTasks()} type="button" className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 transition">清空</button>
+              )}
+            </div>
+
+            <div className="mt-4 flex-1 space-y-3 overflow-auto pr-1">
+              {tasks.length > 0 ? tasks.slice(0, 5).map((task, index) => <TaskItem key={`${task.id || "task"}-${index}`} task={task} />) : (
+                <div className="flex h-full flex-col items-center justify-center text-center text-slate-400">
+                  <Icon name="file" size={32} />
+                  <p className="mt-3 text-sm">暂无处理任务</p>
+                  <p className="mt-1 text-xs">处理文件后将在此显示进度</p>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
       </div>
