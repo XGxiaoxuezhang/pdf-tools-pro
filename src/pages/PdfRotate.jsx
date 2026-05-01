@@ -19,14 +19,9 @@ export default function PdfRotate() {
   const [scope, setScope] = useState("all");
   const [selectedPages, setSelectedPages] = useState(new Set());
 
-  const loadPdf = async (f, path) => {
-    let buffer;
+  const loadPdf = async (path) => {
     if (window.electronAPI && path) {
-      buffer = await window.electronAPI.readFile(path);
-    } else if (f.arrayBuffer) {
-      buffer = await f.arrayBuffer();
-    }
-    if (buffer) {
+      const buffer = await window.electronAPI.readFile(path);
       const blob = new Blob([buffer], { type: "application/pdf" });
       setPdfUrl(URL.createObjectURL(blob));
     }
@@ -44,7 +39,7 @@ export default function PdfRotate() {
         setFilePath(path);
         setFile({ name, size: 0 });
         setSelectedPages(new Set());
-        await loadPdf({ name }, path);
+        await loadPdf(path);
       }
     }
   };
@@ -56,7 +51,7 @@ export default function PdfRotate() {
       setFile(dropped);
       setFilePath(dropped.path || "");
       setSelectedPages(new Set());
-      await loadPdf(dropped, dropped.path);
+      if (dropped.path) await loadPdf(dropped.path);
     }
   };
 
@@ -71,6 +66,14 @@ export default function PdfRotate() {
       else next.add(idx);
       return next;
     });
+  };
+
+  const isPageRotated = (idx) => {
+    if (scope === "all") return true;
+    if (scope === "odd") return idx % 2 === 0;
+    if (scope === "even") return idx % 2 === 1;
+    if (scope === "custom") return selectedPages.has(idx);
+    return false;
   };
 
   const executeRotate = async () => {
@@ -160,25 +163,35 @@ export default function PdfRotate() {
               {pdfUrl && (
                 <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} loading={<div className="text-slate-500 font-bold p-8">加载中...</div>}>
                   <div className="grid grid-cols-3 lg:grid-cols-4 gap-4">
-                    {Array.from({ length: numPages || 0 }, (_, i) => i).map((idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => { if (scope === "custom") togglePage(idx); }}
-                        className={`relative rounded-xl border-2 overflow-hidden transition cursor-pointer ${scope === "custom" && selectedPages.has(idx) ? "border-red-500 shadow-lg ring-2 ring-red-200" : "border-slate-200 hover:border-red-300"}`}
-                      >
-                        <div className="p-2">
-                          <Page pageNumber={idx + 1} scale={0.25} renderTextLayer={false} renderAnnotationLayer={false} />
-                        </div>
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                          第 {idx + 1} 页
-                        </div>
-                        {scope === "custom" && selectedPages.has(idx) && (
-                          <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 flex items-center justify-center">
-                            <Icon name="check" size={12} className="text-white" />
+                    {Array.from({ length: numPages || 0 }, (_, i) => i).map((idx) => {
+                      const rotated = isPageRotated(idx);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => { if (scope === "custom") togglePage(idx); }}
+                          className={`relative rounded-xl border-2 overflow-visible transition cursor-pointer ${scope === "custom" && selectedPages.has(idx) ? "border-red-500 shadow-lg ring-2 ring-red-200" : rotated ? "border-orange-300 bg-orange-50/30" : "border-slate-200 hover:border-red-300"}`}
+                        >
+                          <div className="p-2 flex items-center justify-center" style={{ minHeight: 100 }}>
+                            <div style={{ transform: `rotate(${rotated ? angle : 0}deg)`, transition: "transform 0.3s ease" }}>
+                              <Page pageNumber={idx + 1} scale={0.25} renderTextLayer={false} renderAnnotationLayer={false} />
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-2 py-0.5 rounded-full z-10">
+                            第 {idx + 1} 页
+                          </div>
+                          {rotated && (
+                            <div className="absolute top-1 left-1 text-xs font-bold px-1.5 py-0.5 rounded bg-orange-500 text-white z-10">
+                              {angle}°
+                            </div>
+                          )}
+                          {scope === "custom" && selectedPages.has(idx) && (
+                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 flex items-center justify-center z-10">
+                              <Icon name="check" size={12} className="text-white" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </Document>
               )}

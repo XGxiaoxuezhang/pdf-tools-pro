@@ -2,16 +2,32 @@ import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { addWatermark } from "../lib/pdfCore";
 import { addTask } from "../lib/taskStore";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export default function PdfWatermark() {
   const [file, setFile] = useState(null);
   const [filePath, setFilePath] = useState("");
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [text, setText] = useState("机密文件");
   const [fontSize, setFontSize] = useState(48);
   const [color, setColor] = useState("#999999");
   const [opacity, setOpacity] = useState(0.3);
   const [angle, setAngle] = useState(-45);
+  const [numPages, setNumPages] = useState(null);
+
+  const loadPdf = async (path) => {
+    if (window.electronAPI && path) {
+      const buffer = await window.electronAPI.readFile(path);
+      const blob = new Blob([buffer], { type: "application/pdf" });
+      setPdfUrl(URL.createObjectURL(blob));
+    }
+  };
 
   const handleSelectFiles = async () => {
     if (window.electronAPI) {
@@ -20,9 +36,11 @@ export default function PdfWatermark() {
         filters: [{ name: "PDF Files", extensions: ["pdf"] }],
       });
       if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-        setFilePath(result.filePaths[0]);
-        const name = result.filePaths[0].split('\\').pop().split('/').pop();
+        const path = result.filePaths[0];
+        const name = path.split('\\').pop().split('/').pop();
+        setFilePath(path);
         setFile({ name, size: 0 });
+        await loadPdf(path);
       }
     }
   };
@@ -33,6 +51,7 @@ export default function PdfWatermark() {
     if (dropped) {
       setFile(dropped);
       setFilePath(dropped.path || "");
+      if (dropped.path) await loadPdf(dropped.path);
     }
   };
 
@@ -64,7 +83,7 @@ export default function PdfWatermark() {
           if (res.success) {
             addTask({ file: file.name, action: "添加水印", size: `"${text}"`, progress: 100, status: "已完成" });
             alert("水印添加成功！");
-            setFile(null); setFilePath("");
+            setFile(null); setFilePath(""); setPdfUrl(null);
           } else {
             alert("保存失败：" + res.error);
           }
@@ -78,21 +97,23 @@ export default function PdfWatermark() {
     }
   };
 
+  const previewFontSize = Math.min(fontSize, 20);
+
   return (
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">PDF 水印</h1>
-        <p className="mt-1 text-sm text-slate-500">为 PDF 添加文字水印，支持自定义样式。</p>
+        <p className="mt-1 text-sm text-slate-500">为 PDF 添加文字水印，支持自定义样式，实时预览。</p>
       </div>
 
       <div className="flex flex-1 gap-6 min-h-[400px]">
-        <div
-          className="flex-1 flex flex-col rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 p-6 transition hover:border-red-400 hover:bg-red-50/50"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleFileDrop}
-        >
+        <div className="flex-1 flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-auto">
           {!file ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div
+              className="flex flex-1 flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 transition hover:border-red-400 hover:bg-red-50/50"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleFileDrop}
+            >
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
                 <Icon name="shield" size={40} />
               </div>
@@ -103,22 +124,28 @@ export default function PdfWatermark() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center flex-1">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-50 text-red-600 mb-4">
-                <Icon name="file" size={40} />
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-bold text-slate-700">{file.name} — {numPages} 页</span>
+                <button onClick={() => { setFile(null); setFilePath(""); setPdfUrl(null); }} className="text-sm font-bold text-slate-400 hover:text-red-600">重新选择</button>
               </div>
-              <div className="font-bold text-slate-900 text-lg">{file.name}</div>
-              <button onClick={() => { setFile(null); setFilePath(""); }} className="mt-3 text-sm font-bold text-slate-400 hover:text-red-600">
-                移除并重新选择
-              </button>
-
-              {/* Watermark preview */}
-              <div className="mt-8 relative w-64 h-40 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center" style={{ transform: `rotate(${angle}deg)`, opacity }}>
-                  <span style={{ fontSize: Math.min(fontSize, 24), color, fontWeight: "bold", whiteSpace: "nowrap" }}>{text || "水印预览"}</span>
+              {pdfUrl && (
+                <div className="flex-1 flex items-center justify-center overflow-auto">
+                  <div className="relative inline-block shadow-lg rounded-lg overflow-hidden">
+                    <Document file={pdfUrl} onLoadSuccess={({ numPages: n }) => setNumPages(n)} loading={<div className="text-slate-500 font-bold p-8">加载中...</div>}>
+                      <Page pageNumber={1} scale={0.5} renderTextLayer={false} renderAnnotationLayer={false} />
+                    </Document>
+                    {/* Watermark preview overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+                      <div style={{ transform: `rotate(${angle}deg)`, opacity }}>
+                        <span style={{ fontSize: previewFontSize, color, fontWeight: "bold", whiteSpace: "nowrap" }}>
+                          {text || "水印预览"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="relative text-xs text-slate-400">预览效果</span>
-              </div>
+              )}
             </div>
           )}
         </div>

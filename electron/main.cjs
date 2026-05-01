@@ -299,6 +299,18 @@ ipcMain.handle('open-external', (event, url) => {
   shell.openExternal(url);
 });
 
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
+
 ipcMain.handle('check-for-updates', async () => {
   try {
     const currentVersion = app.getVersion();
@@ -314,7 +326,7 @@ ipcMain.handle('check-for-updates', async () => {
       latestVersion,
       downloadUrl,
       releaseNotes: body,
-      hasUpdate: latestVersion !== currentVersion
+      hasUpdate: compareVersions(latestVersion, currentVersion) > 0
     };
   } catch (err) {
     return { currentVersion: app.getVersion(), error: err.message };
