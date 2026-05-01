@@ -140,7 +140,6 @@ export default function Home() {
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-5 overflow-hidden p-5">
         <section className="min-w-0 overflow-auto pr-1">
-          {/* 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_300px]">
             <div className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-slate-950 via-slate-900 to-red-950 p-6 text-white shadow-2xl shadow-slate-900/15">
               <div className="absolute right-[-80px] top-[-80px] h-64 w-64 rounded-full bg-red-500/20 blur-3xl" />
@@ -150,7 +149,7 @@ export default function Home() {
                     <Icon name="spark" size={15} /> 全民好用 PDF 桌面版
                   </div>
                   <h1 className="mt-5 max-w-xl text-4xl font-black leading-tight">复杂 PDF 操作，做成一个按钮的事。</h1>
-                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/65">支持转换、合并、拆分、压缩、加密。本地优先处理，界面保持清爽，不打扰办公节奏。</p>
+                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/65">支持转换、合并、拆分、压缩、加密、旋转、水印、重排、批量处理。本地优先处理，界面保持清爽。</p>
                 </div>
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Link to="/viewer" className="rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 hover:bg-slate-50 transition">选择 PDF 文件</Link>
@@ -168,7 +167,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-          */}
 
           <div className="mt-5 rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
