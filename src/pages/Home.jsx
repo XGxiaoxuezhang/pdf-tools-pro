@@ -144,7 +144,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-5 overflow-hidden p-5">
+      <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 overflow-hidden p-5">
         <section className="min-w-0 overflow-auto pr-1">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_300px]">
             <div className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-slate-950 via-slate-900 to-red-950 p-6 text-white shadow-2xl shadow-slate-900/15">
@@ -195,7 +195,7 @@ export default function Home() {
           </div>
         </section>
 
-        <aside className="hidden min-h-0 flex-col gap-5 overflow-hidden xl:flex" style={{ width: 360 }}>
+        <aside className="hidden min-h-0 flex-col gap-5 overflow-y-auto xl:flex" style={{ width: 360 }}>
           {/* Quick actions */}
           <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black">快速操作</h2>

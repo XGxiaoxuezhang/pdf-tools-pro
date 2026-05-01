@@ -35,7 +35,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-3">
             <img src="./logo.png" alt="全民好用PDF Logo" className="h-8 object-contain drop-shadow-sm" />
             <div className="text-sm font-black">全民好用 PDF</div>
-            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.5 桌面客户端</div>
+            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.6 桌面客户端</div>
           </div>
           <div className="flex items-center">
             <WindowButton type="min" />
@@ -45,7 +45,7 @@ export default function Layout({ children }) {
         </div>
 
         <div className="flex min-h-0 flex-1">
-          <aside className="flex w-[248px] shrink-0 flex-col border-r border-slate-200 bg-white/75 p-4 backdrop-blur-xl">
+          <aside className="flex w-[248px] shrink-0 flex-col border-r border-slate-200 bg-white/75 p-4 backdrop-blur-xl overflow-y-auto">
             <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-xl shadow-slate-900/10">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10"><Icon name="spark" size={22} /></div>

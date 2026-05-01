@@ -2,13 +2,35 @@ import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { rotatePdf } from "../lib/pdfCore";
 import { addTask } from "../lib/taskStore";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export default function PdfRotate() {
   const [file, setFile] = useState(null);
   const [filePath, setFilePath] = useState("");
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [numPages, setNumPages] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [angle, setAngle] = useState(90);
-  const [scope, setScope] = useState("all"); // "all" | "odd" | "even"
+  const [scope, setScope] = useState("all");
+  const [selectedPages, setSelectedPages] = useState(new Set());
+
+  const loadPdf = async (f, path) => {
+    let buffer;
+    if (window.electronAPI && path) {
+      buffer = await window.electronAPI.readFile(path);
+    } else if (f.arrayBuffer) {
+      buffer = await f.arrayBuffer();
+    }
+    if (buffer) {
+      const blob = new Blob([buffer], { type: "application/pdf" });
+      setPdfUrl(URL.createObjectURL(blob));
+    }
+  };
 
   const handleSelectFiles = async () => {
     if (window.electronAPI) {
@@ -17,9 +39,12 @@ export default function PdfRotate() {
         filters: [{ name: "PDF Files", extensions: ["pdf"] }],
       });
       if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-        setFilePath(result.filePaths[0]);
-        const name = result.filePaths[0].split('\\').pop().split('/').pop();
+        const path = result.filePaths[0];
+        const name = path.split('\\').pop().split('/').pop();
+        setFilePath(path);
         setFile({ name, size: 0 });
+        setSelectedPages(new Set());
+        await loadPdf({ name }, path);
       }
     }
   };
@@ -30,11 +55,27 @@ export default function PdfRotate() {
     if (dropped) {
       setFile(dropped);
       setFilePath(dropped.path || "");
+      setSelectedPages(new Set());
+      await loadPdf(dropped, dropped.path);
     }
+  };
+
+  const handleLoadSuccess = ({ numPages: n }) => {
+    setNumPages(n);
+  };
+
+  const togglePage = (idx) => {
+    setSelectedPages(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
   };
 
   const executeRotate = async () => {
     if (!file) return alert("请先选择 PDF 文件！");
+    if (scope === "custom" && selectedPages.size === 0) return alert("请先选择要旋转的页面！");
     setIsProcessing(true);
     try {
       let buffer;
@@ -53,6 +94,8 @@ export default function PdfRotate() {
         indices = Array.from({ length: totalPages }, (_, i) => i).filter(i => i % 2 === 0);
       } else if (scope === "even") {
         indices = Array.from({ length: totalPages }, (_, i) => i).filter(i => i % 2 === 1);
+      } else if (scope === "custom") {
+        indices = Array.from(selectedPages).sort((a, b) => a - b);
       }
 
       const result = await rotatePdf(buffer, angle, indices);
@@ -67,9 +110,10 @@ export default function PdfRotate() {
         if (!canceled && savePath) {
           const res = await window.electronAPI.saveFile(savePath, result);
           if (res.success) {
-            addTask({ file: file.name, action: `旋转 ${angle}°`, size: `${totalPages} 页`, progress: 100, status: "已完成" });
+            const scopeLabel = scope === "custom" ? `${selectedPages.size} 页` : scope === "all" ? `${totalPages} 页` : scope === "odd" ? "奇数页" : "偶数页";
+            addTask({ file: file.name, action: `旋转 ${angle}°`, size: scopeLabel, progress: 100, status: "已完成" });
             alert("旋转成功！");
-            setFile(null); setFilePath("");
+            setFile(null); setFilePath(""); setPdfUrl(null); setSelectedPages(new Set());
           } else {
             alert("保存失败：" + res.error);
           }
@@ -87,17 +131,17 @@ export default function PdfRotate() {
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">PDF 旋转</h1>
-        <p className="mt-1 text-sm text-slate-500">旋转 PDF 页面方向，支持指定范围。</p>
+        <p className="mt-1 text-sm text-slate-500">旋转 PDF 页面方向，支持全部/奇数/偶数/指定页。</p>
       </div>
 
       <div className="flex flex-1 gap-6 min-h-[400px]">
-        <div
-          className="flex-1 flex flex-col rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 p-6 transition hover:border-red-400 hover:bg-red-50/50"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleFileDrop}
-        >
+        <div className="flex-1 flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-auto">
           {!file ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div
+              className="flex flex-1 flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 transition hover:border-red-400 hover:bg-red-50/50"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleFileDrop}
+            >
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
                 <Icon name="settings" size={40} />
               </div>
@@ -108,22 +152,36 @@ export default function PdfRotate() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center flex-1">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-50 text-red-600 mb-4">
-                <Icon name="file" size={40} />
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-bold text-slate-700">{file.name} — {numPages} 页</span>
+                <button onClick={() => { setFile(null); setFilePath(""); setPdfUrl(null); setSelectedPages(new Set()); }} className="text-sm font-bold text-slate-400 hover:text-red-600">重新选择</button>
               </div>
-              <div className="font-bold text-slate-900 text-lg">{file.name}</div>
-              <button onClick={() => { setFile(null); setFilePath(""); }} className="mt-3 text-sm font-bold text-slate-400 hover:text-red-600">
-                移除并重新选择
-              </button>
-
-              {/* Rotation preview */}
-              <div className="mt-8 flex items-center gap-6">
-                <div className="flex h-32 w-24 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white text-slate-400 transition" style={{ transform: `rotate(${angle}deg)` }}>
-                  <Icon name="file" size={32} />
-                </div>
-                <div className="text-4xl font-black text-red-600">{angle}°</div>
-              </div>
+              {pdfUrl && (
+                <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} loading={<div className="text-slate-500 font-bold p-8">加载中...</div>}>
+                  <div className="grid grid-cols-3 lg:grid-cols-4 gap-4">
+                    {Array.from({ length: numPages || 0 }, (_, i) => i).map((idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => { if (scope === "custom") togglePage(idx); }}
+                        className={`relative rounded-xl border-2 overflow-hidden transition cursor-pointer ${scope === "custom" && selectedPages.has(idx) ? "border-red-500 shadow-lg ring-2 ring-red-200" : "border-slate-200 hover:border-red-300"}`}
+                      >
+                        <div className="p-2">
+                          <Page pageNumber={idx + 1} scale={0.25} renderTextLayer={false} renderAnnotationLayer={false} />
+                        </div>
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          第 {idx + 1} 页
+                        </div>
+                        {scope === "custom" && selectedPages.has(idx) && (
+                          <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 flex items-center justify-center">
+                            <Icon name="check" size={12} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Document>
+              )}
             </div>
           )}
         </div>
@@ -144,17 +202,21 @@ export default function PdfRotate() {
 
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-2">旋转范围</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: "all", label: "全部页" },
                   { key: "odd", label: "奇数页" },
                   { key: "even", label: "偶数页" },
+                  { key: "custom", label: "指定页" },
                 ].map(s => (
                   <button key={s.key} onClick={() => setScope(s.key)} className={`rounded-xl px-3 py-3 text-sm font-bold border transition ${scope === s.key ? "bg-red-50 text-red-600 border-red-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
                     {s.label}
                   </button>
                 ))}
               </div>
+              {scope === "custom" && (
+                <p className="mt-2 text-xs text-slate-400">点击左侧页面缩略图选中要旋转的页面（已选 {selectedPages.size} 页）</p>
+              )}
             </div>
 
             <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100">

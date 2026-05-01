@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
 import { PDFDocument } from "pdf-lib";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 function SignaturePad({ onSave }) {
   const canvasRef = useRef(null);
@@ -86,16 +92,46 @@ function SignaturePad({ onSave }) {
   );
 }
 
+const SIGN_POSITIONS = [
+  { key: "bottom-right", label: "右下" },
+  { key: "bottom-left", label: "左下" },
+  { key: "center", label: "居中" },
+  { key: "top-right", label: "右上" },
+  { key: "top-left", label: "左上" },
+];
+
+function getSignStyle(position, signSize) {
+  const size = Math.min(signSize, 80);
+  const base = "absolute border-2 border-dashed border-red-400 bg-red-50/50 rounded-lg flex items-center justify-center";
+  switch (position) {
+    case "bottom-right": return { className: `${base} bottom-3 right-3`, style: { width: size, height: size * 0.5 } };
+    case "bottom-left": return { className: `${base} bottom-3 left-3`, style: { width: size, height: size * 0.5 } };
+    case "top-right": return { className: `${base} top-3 right-3`, style: { width: size, height: size * 0.5 } };
+    case "top-left": return { className: `${base} top-3 left-3`, style: { width: size, height: size * 0.5 } };
+    case "center": return { className: `${base} top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`, style: { width: size, height: size * 0.5 } };
+    default: return { className: `${base} bottom-3 right-3`, style: { width: size, height: size * 0.5 } };
+  }
+}
+
 export default function PdfSign() {
   const [file, setFile] = useState(null);
   const [filePath, setFilePath] = useState("");
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState(null);
-  const [signMode, setSignMode] = useState("draw"); // "draw" | "upload"
+  const [signMode, setSignMode] = useState("draw");
   const [position, setPosition] = useState("bottom-right");
   const [signSize, setSignSize] = useState(150);
   const [pageNum, setPageNum] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+
+  const loadPdf = async (path) => {
+    if (window.electronAPI && path) {
+      const buffer = await window.electronAPI.readFile(path);
+      const blob = new Blob([buffer], { type: "application/pdf" });
+      setPdfUrl(URL.createObjectURL(blob));
+    }
+  };
 
   const handleSelectFiles = async () => {
     if (window.electronAPI) {
@@ -113,6 +149,7 @@ export default function PdfSign() {
           const pdf = await PDFDocument.load(buf);
           setTotalPages(pdf.getPageCount());
         } catch { setTotalPages(0); }
+        await loadPdf(path);
       }
     }
   };
@@ -123,6 +160,14 @@ export default function PdfSign() {
     if (dropped) {
       setFile(dropped);
       setFilePath(dropped.path || "");
+      try {
+        const buf = dropped.arrayBuffer ? await dropped.arrayBuffer() : null;
+        if (buf) {
+          const pdf = await PDFDocument.load(buf);
+          setTotalPages(pdf.getPageCount());
+        }
+      } catch { setTotalPages(0); }
+      if (dropped.path) await loadPdf(dropped.path);
     }
   };
 
@@ -192,7 +237,7 @@ export default function PdfSign() {
         if (res.success) {
           addTask({ file: file.name, action: "添加签名", size: `第 ${pageNum} 页`, progress: 100, status: "已完成" });
           alert("签名添加成功！");
-          setFile(null); setFilePath(""); setSignatureDataUrl(null);
+          setFile(null); setFilePath(""); setPdfUrl(null); setSignatureDataUrl(null);
         } else {
           alert("保存失败：" + res.error);
         }
@@ -205,6 +250,8 @@ export default function PdfSign() {
     }
   };
 
+  const signPosStyle = getSignStyle(position, signSize);
+
   return (
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
@@ -213,13 +260,13 @@ export default function PdfSign() {
       </div>
 
       <div className="flex flex-1 gap-6 min-h-[400px]">
-        <div
-          className="flex-1 flex flex-col rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 p-6 transition hover:border-red-400 hover:bg-red-50/50"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleFileDrop}
-        >
+        <div className="flex-1 flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-auto">
           {!file ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div
+              className="flex flex-1 flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 transition hover:border-red-400 hover:bg-red-50/50"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleFileDrop}
+            >
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
                 <Icon name="signature" size={40} />
               </div>
@@ -230,20 +277,26 @@ export default function PdfSign() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center flex-1">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-50 text-red-600 mb-4">
-                <Icon name="file" size={40} />
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-bold text-slate-700">{file.name} — {totalPages} 页</span>
+                <button onClick={() => { setFile(null); setFilePath(""); setPdfUrl(null); setTotalPages(0); }} className="text-sm font-bold text-slate-400 hover:text-red-600">重新选择</button>
               </div>
-              <div className="font-bold text-slate-900 text-lg">{file.name}</div>
-              {totalPages > 0 && <div className="text-sm text-slate-500 mt-1">{totalPages} 页</div>}
-              <button onClick={() => { setFile(null); setFilePath(""); setTotalPages(0); }} className="mt-3 text-sm font-bold text-slate-400 hover:text-red-600">
-                移除并重新选择
-              </button>
-
-              {signatureDataUrl && (
-                <div className="mt-6 p-4 rounded-2xl bg-white border border-slate-200">
-                  <div className="text-xs font-bold text-slate-500 mb-2">签名预览</div>
-                  <img src={signatureDataUrl} alt="Signature" className="max-h-20 object-contain" />
+              {pdfUrl && (
+                <div className="flex-1 flex items-center justify-center overflow-auto">
+                  <div className="relative inline-block">
+                    <Document file={pdfUrl} loading={<div className="text-slate-500 font-bold p-8">加载中...</div>}>
+                      <Page pageNumber={Math.min(pageNum, totalPages)} scale={0.6} renderTextLayer={false} renderAnnotationLayer={false} />
+                    </Document>
+                    {/* Signature position indicator */}
+                    <div className={signPosStyle.className} style={signPosStyle.style}>
+                      {signatureDataUrl ? (
+                        <img src={signatureDataUrl} alt="签名" className="max-w-full max-h-full object-contain p-1" />
+                      ) : (
+                        <span className="text-xs text-red-400 font-bold">签名</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -269,9 +322,15 @@ export default function PdfSign() {
               <SignaturePad onSave={(dataUrl) => { setSignatureDataUrl(dataUrl); setSignMode("draw"); }} />
             )}
             {signatureDataUrl && (
-              <button onClick={() => setSignatureDataUrl(null)} className="w-full rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 transition">
-                清除签名重新来
-              </button>
+              <div className="space-y-2">
+                <div className="p-3 rounded-xl bg-green-50 border border-green-100 flex items-center gap-3">
+                  <img src={signatureDataUrl} alt="签名" className="max-h-8 object-contain" />
+                  <span className="text-xs font-bold text-green-700">签名已就绪</span>
+                </div>
+                <button onClick={() => setSignatureDataUrl(null)} className="w-full rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 transition">
+                  清除签名重新来
+                </button>
+              </div>
             )}
 
             <div>
@@ -282,11 +341,7 @@ export default function PdfSign() {
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-2">签名位置</label>
               <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: "bottom-right", label: "右下" },
-                  { key: "bottom-left", label: "左下" },
-                  { key: "center", label: "居中" },
-                ].map(p => (
+                {SIGN_POSITIONS.map(p => (
                   <button key={p.key} onClick={() => setPosition(p.key)} className={`rounded-xl px-2 py-2 text-xs font-bold border transition ${position === p.key ? "bg-red-50 text-red-600 border-red-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
                     {p.label}
                   </button>

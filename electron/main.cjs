@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs/promises');
 const fsSync = require('fs');
@@ -288,6 +288,36 @@ ipcMain.handle('print:pdf', async (event, pdfDataArray, options = {}) => {
     });
   } catch (err) {
     return { success: false, reason: err.message };
+  }
+});
+
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('open-external', (event, url) => {
+  shell.openExternal(url);
+});
+
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    const currentVersion = app.getVersion();
+    const res = await net.fetch('https://api.github.com/repos/XGxiaoxuezhang/pdf-tools-pro/releases/latest', {
+      headers: { 'User-Agent': 'pdf-tools-pro' }
+    });
+    const data = await res.json();
+    const latestVersion = (data.tag_name || '').replace('v', '');
+    const downloadUrl = data.html_url || '';
+    const body = data.body || '';
+    return {
+      currentVersion,
+      latestVersion,
+      downloadUrl,
+      releaseNotes: body,
+      hasUpdate: latestVersion !== currentVersion
+    };
+  } catch (err) {
+    return { currentVersion: app.getVersion(), error: err.message };
   }
 });
 

@@ -10,4 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onOpenExternalFile: (callback) => ipcRenderer.on('open-external-file', (_event, filePath) => callback(filePath)),
   removeOpenExternalFileListener: (callback) => ipcRenderer.removeAllListeners('open-external-file'),
   printPdf: (pdfDataArray, options) => ipcRenderer.invoke('print:pdf', pdfDataArray, options),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
 });
