@@ -15,6 +15,10 @@ const TOOLS = [
   { name: "PDF 加密", desc: "密码保护", icon: "lock", tag: "安全", group: "安全", to: "/secure" },
   { name: "PDF 解密", desc: "移除已知密码", icon: "unlock", tag: "工具", group: "安全", to: "/secure" },
   { name: "PDF 阅读与编辑", desc: "查看与单页操作", icon: "search", tag: "新", group: "编辑", to: "/viewer" },
+  { name: "PDF 旋转", desc: "旋转页面方向", icon: "settings", tag: "新", group: "编辑", to: "/rotate" },
+  { name: "PDF 水印", desc: "添加文字水印", icon: "shield", tag: "新", group: "安全", to: "/watermark" },
+  { name: "PDF 页面重排", desc: "拖拽调整顺序", icon: "layers", tag: "新", group: "编辑", to: "/reorder" },
+  { name: "批量处理", desc: "统一处理多个文件", icon: "grid", tag: "新", group: "编辑", to: "/batch" },
 ];
 
 function ToolCard({ tool, index = 0 }) {

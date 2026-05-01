@@ -8,6 +8,10 @@ import PdfViewer from "./pages/PdfViewer";
 import PdfConvert from "./pages/PdfConvert";
 import PdfCompress from "./pages/PdfCompress";
 import PdfSecure from "./pages/PdfSecure";
+import PdfRotate from "./pages/PdfRotate";
+import PdfWatermark from "./pages/PdfWatermark";
+import PdfReorder from "./pages/PdfReorder";
+import PdfBatch from "./pages/PdfBatch";
 import TaskHistory from "./pages/TaskHistory";
 import About from "./pages/About";
 
@@ -65,6 +69,10 @@ export default function App() {
           <Route path="/compress" element={<PdfCompress />} />
           <Route path="/convert" element={<PdfConvert />} />
           <Route path="/secure" element={<PdfSecure />} />
+          <Route path="/rotate" element={<PdfRotate />} />
+          <Route path="/watermark" element={<PdfWatermark />} />
+          <Route path="/reorder" element={<PdfReorder />} />
+          <Route path="/batch" element={<PdfBatch />} />
           <Route path="/history" element={<TaskHistory />} />
           <Route path="/about" element={<About />} />
         </Routes>

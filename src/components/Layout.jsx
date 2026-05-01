@@ -35,7 +35,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-3">
             <img src="./logo.png" alt="全民好用PDF Logo" className="h-8 object-contain drop-shadow-sm" />
             <div className="text-sm font-black">全民好用 PDF</div>
-            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.3 桌面客户端</div>
+            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.4 桌面客户端</div>
           </div>
           <div className="flex items-center">
             <WindowButton type="min" />
@@ -64,6 +64,10 @@ export default function Layout({ children }) {
               <NavItem icon="search" label="PDF 预览/编辑" to="/viewer" />
               <NavItem icon="zap" label="PDF 压缩" to="/compress" />
               <NavItem icon="lock" label="PDF 安全中心" to="/secure" />
+              <NavItem icon="settings" label="PDF 旋转" to="/rotate" />
+              <NavItem icon="shield" label="PDF 水印" to="/watermark" />
+              <NavItem icon="layers" label="PDF 页面重排" to="/reorder" />
+              <NavItem icon="grid" label="批量处理" to="/batch" />
               <NavItem icon="history" label="任务记录" to="/history" />
               <NavItem icon="user" label="关于我们" to="/about" />
             </nav>
