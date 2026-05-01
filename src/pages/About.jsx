@@ -2,21 +2,36 @@ import React, { useState, useEffect } from "react";
 import Icon from "../components/Icon";
 
 export default function About() {
-  const [version, setVersion] = useState("1.0.7");
-  const [updateStatus, setUpdateStatus] = useState(null); // null | "checking" | "up-to-date" | "available" | "error"
+  const [version, setVersion] = useState("1.0.8");
+  const [updateStatus, setUpdateStatus] = useState(null); // null | "checking" | "up-to-date" | "available" | "downloading" | "ready" | "error"
   const [updateInfo, setUpdateInfo] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState(null);
+  const [downloadedFilePath, setDownloadedFilePath] = useState(null);
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
       window.electronAPI.getAppVersion().then(v => { if (v) setVersion(v); });
     }
-    // Auto-check on mount
     checkUpdate();
+
+    return () => {
+      window.electronAPI?.removeUpdateProgressListener?.();
+    };
   }, []);
+
+  useEffect(() => {
+    if (updateStatus === "downloading") {
+      window.electronAPI?.onUpdateProgress?.((data) => {
+        setDownloadProgress(data);
+      });
+    }
+  }, [updateStatus]);
 
   const checkUpdate = async () => {
     if (!window.electronAPI?.checkForUpdates) return;
     setUpdateStatus("checking");
+    setDownloadProgress(null);
+    setDownloadedFilePath(null);
     try {
       const result = await window.electronAPI.checkForUpdates();
       if (result.error) {
@@ -32,6 +47,45 @@ export default function About() {
     } catch {
       setUpdateStatus("error");
     }
+  };
+
+  const startDownload = async () => {
+    if (!window.electronAPI?.downloadUpdate) return;
+    setUpdateStatus("downloading");
+    setDownloadProgress({ percent: 0, downloaded: 0, total: 0 });
+    try {
+      const result = await window.electronAPI.downloadUpdate();
+      if (result.success) {
+        setDownloadedFilePath(result.filePath);
+        setUpdateStatus("ready");
+      } else {
+        if (result.error === '下载已取消') {
+          setUpdateStatus("available");
+          setDownloadProgress(null);
+        } else {
+          setUpdateStatus("error");
+          setUpdateInfo(prev => ({ ...prev, error: result.error }));
+        }
+      }
+    } catch {
+      setUpdateStatus("error");
+    }
+  };
+
+  const cancelDownload = () => {
+    window.electronAPI?.cancelDownload?.();
+  };
+
+  const installNow = () => {
+    if (downloadedFilePath) {
+      window.electronAPI?.installUpdate?.(downloadedFilePath);
+    }
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes) return "";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   return (
@@ -51,7 +105,7 @@ export default function About() {
           <div className="mt-2 text-sm text-slate-500 font-medium">版本 {version} (桌面专业版)</div>
 
           {/* Update check */}
-          <div className="mt-4">
+          <div className="mt-4 w-full max-w-md">
             {updateStatus === "checking" && (
               <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm text-blue-700">
                 <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -65,20 +119,71 @@ export default function About() {
               </div>
             )}
             {updateStatus === "available" && updateInfo && (
-              <div className="inline-flex items-center gap-3 rounded-full bg-orange-50 px-4 py-2 text-sm text-orange-700">
-                <span>发现新版本 v{updateInfo.latestVersion}</span>
+              <div className="flex flex-col items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-2 text-sm text-orange-700">
+                  <span>发现新版本 v{updateInfo.latestVersion}</span>
+                </div>
                 <button
-                  onClick={() => window.electronAPI?.openExternal(updateInfo.downloadUrl)}
-                  className="rounded-lg bg-orange-600 px-3 py-1 text-xs font-bold text-white hover:bg-orange-700 transition"
+                  onClick={startDownload}
+                  className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-3 text-sm font-bold text-white hover:bg-orange-700 shadow-lg hover:shadow-orange-600/20 transition"
                 >
-                  前往下载
+                  <Icon name="download" size={16} />
+                  下载更新
+                </button>
+              </div>
+            )}
+            {updateStatus === "downloading" && (
+              <div className="flex flex-col items-center gap-3 w-full">
+                <div className="text-sm text-slate-600 font-bold">
+                  正在下载 v{updateInfo?.latestVersion}...
+                  {downloadProgress?.percent > 0 && (
+                    <span className="text-orange-600 ml-2">{downloadProgress.percent}%</span>
+                  )}
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-orange-500 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${downloadProgress?.percent || 0}%` }}
+                  />
+                </div>
+                <div className="text-xs text-slate-400">
+                  {formatBytes(downloadProgress?.downloaded)}{downloadProgress?.total > 0 ? ` / ${formatBytes(downloadProgress.total)}` : ""}
+                </div>
+                <button
+                  onClick={cancelDownload}
+                  className="text-xs text-slate-500 hover:text-red-600 font-bold transition"
+                >
+                  取消下载
+                </button>
+              </div>
+            )}
+            {updateStatus === "ready" && (
+              <div className="flex flex-col items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 text-sm text-green-700">
+                  <Icon name="check" size={16} />
+                  下载完成
+                </div>
+                <button
+                  onClick={installNow}
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 text-sm font-bold text-white hover:bg-green-700 shadow-lg hover:shadow-green-600/20 transition"
+                >
+                  立即安装
+                </button>
+                <button
+                  onClick={() => { setUpdateStatus("up-to-date"); setDownloadProgress(null); setDownloadedFilePath(null); }}
+                  className="text-xs text-slate-400 hover:text-slate-600 transition"
+                >
+                  稍后安装
                 </button>
               </div>
             )}
             {updateStatus === "error" && (
-              <button onClick={checkUpdate} className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600 hover:bg-slate-200 transition">
-                检查更新失败，点击重试
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                {updateInfo?.error && <p className="text-xs text-red-500">{updateInfo.error}</p>}
+                <button onClick={checkUpdate} className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600 hover:bg-slate-200 transition">
+                  检查更新失败，点击重试
+                </button>
+              </div>
             )}
             {!updateStatus && (
               <button onClick={checkUpdate} className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600 hover:bg-slate-200 transition">

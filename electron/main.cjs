@@ -4,6 +4,7 @@ const fs = require('fs/promises');
 const fsSync = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
+const https = require('https');
 
 // Removed squirrel startup as we use electron-builder
 
@@ -330,6 +331,112 @@ ipcMain.handle('check-for-updates', async () => {
     };
   } catch (err) {
     return { currentVersion: app.getVersion(), error: err.message };
+  }
+});
+
+let currentDownloadReq = null;
+
+ipcMain.handle('update:download', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return { success: false, error: '窗口不存在' };
+
+  try {
+    // Get release info
+    const res = await net.fetch('https://api.github.com/repos/XGxiaoxuezhang/pdf-tools-pro/releases/latest', {
+      headers: { 'User-Agent': 'pdf-tools-pro' }
+    });
+    const data = await res.json();
+    const latestVersion = (data.tag_name || '').replace('v', '');
+    const asset = (data.assets || []).find(a => a.name && a.name.endsWith('.exe'));
+    if (!asset) return { success: false, error: '未找到安装包' };
+
+    const downloadUrl = asset.browser_download_url;
+    const fileName = asset.name;
+    const savePath = path.join(os.tmpdir(), fileName);
+
+    return await new Promise((resolve) => {
+      const doRequest = (url, redirects = 0) => {
+        if (redirects > 5) {
+          resolve({ success: false, error: '重定向次数过多' });
+          return;
+        }
+
+        const req = https.get(url, { headers: { 'User-Agent': 'pdf-tools-pro' } }, (res) => {
+          // Handle redirect
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            doRequest(res.headers.location, redirects + 1);
+            return;
+          }
+
+          if (res.statusCode !== 200) {
+            resolve({ success: false, error: `下载失败: HTTP ${res.statusCode}` });
+            return;
+          }
+
+          const total = parseInt(res.headers['content-length'] || '0', 10);
+          let downloaded = 0;
+          const fileStream = fsSync.createWriteStream(savePath);
+
+          res.on('data', (chunk) => {
+            downloaded += chunk.length;
+            const percent = total > 0 ? Math.round((downloaded / total) * 100) : 0;
+            win.webContents.send('update:download-progress', {
+              percent,
+              downloaded,
+              total,
+              version: latestVersion,
+            });
+          });
+
+          res.pipe(fileStream);
+
+          fileStream.on('finish', () => {
+            fileStream.close();
+            currentDownloadReq = null;
+            resolve({ success: true, filePath: savePath, version: latestVersion });
+          });
+
+          fileStream.on('error', (err) => {
+            currentDownloadReq = null;
+            try { fsSync.unlinkSync(savePath); } catch (_) {}
+            resolve({ success: false, error: err.message });
+          });
+        });
+
+        req.on('error', (err) => {
+          currentDownloadReq = null;
+          if (err.code === 'ECONNRESET') {
+            resolve({ success: false, error: '下载已取消' });
+          } else {
+            resolve({ success: false, error: err.message });
+          }
+        });
+
+        currentDownloadReq = req;
+      };
+
+      doRequest(downloadUrl);
+    });
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('update:cancel-download', () => {
+  if (currentDownloadReq) {
+    currentDownloadReq.destroy();
+    currentDownloadReq = null;
+    return { success: true };
+  }
+  return { success: false };
+});
+
+ipcMain.handle('update:install', async (event, installerPath) => {
+  try {
+    await shell.openPath(installerPath);
+    app.quit();
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });
 

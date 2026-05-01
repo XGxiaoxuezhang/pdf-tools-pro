@@ -35,7 +35,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-3">
             <img src="./logo.png" alt="全民好用PDF Logo" className="h-8 object-contain drop-shadow-sm" />
             <div className="text-sm font-black">全民好用 PDF</div>
-            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.7 桌面客户端</div>
+            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.8 桌面客户端</div>
           </div>
           <div className="flex items-center">
             <WindowButton type="min" />
