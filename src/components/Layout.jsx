@@ -35,7 +35,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-3">
             <img src="./logo.png" alt="全民好用PDF Logo" className="h-8 object-contain drop-shadow-sm" />
             <div className="text-sm font-black">全民好用 PDF</div>
-            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.4 桌面客户端</div>
+            <div className="ml-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 md:block">v1.0.5 桌面客户端</div>
           </div>
           <div className="flex items-center">
             <WindowButton type="min" />
@@ -68,6 +68,12 @@ export default function Layout({ children }) {
               <NavItem icon="shield" label="PDF 水印" to="/watermark" />
               <NavItem icon="layers" label="PDF 页面重排" to="/reorder" />
               <NavItem icon="grid" label="批量处理" to="/batch" />
+              <NavItem icon="image" label="PDF 提取图片" to="/extract-images" />
+              <NavItem icon="image" label="图片格式转换" to="/image-convert" />
+              <NavItem icon="file" label="PDF 页码页眉页脚" to="/page-number" />
+              <NavItem icon="search" label="PDF 文字提取" to="/text-extract" />
+              <NavItem icon="signature" label="PDF 签名" to="/sign" />
+              <NavItem icon="search" label="PDF 对比" to="/compare" />
               <NavItem icon="history" label="任务记录" to="/history" />
               <NavItem icon="user" label="关于我们" to="/about" />
             </nav>

@@ -12,6 +12,12 @@ import PdfRotate from "./pages/PdfRotate";
 import PdfWatermark from "./pages/PdfWatermark";
 import PdfReorder from "./pages/PdfReorder";
 import PdfBatch from "./pages/PdfBatch";
+import PdfExtractImages from "./pages/PdfExtractImages";
+import ImageConvert from "./pages/ImageConvert";
+import PdfPageNumber from "./pages/PdfPageNumber";
+import PdfTextExtract from "./pages/PdfTextExtract";
+import PdfSign from "./pages/PdfSign";
+import PdfCompare from "./pages/PdfCompare";
 import TaskHistory from "./pages/TaskHistory";
 import About from "./pages/About";
 
@@ -73,6 +79,12 @@ export default function App() {
           <Route path="/watermark" element={<PdfWatermark />} />
           <Route path="/reorder" element={<PdfReorder />} />
           <Route path="/batch" element={<PdfBatch />} />
+          <Route path="/extract-images" element={<PdfExtractImages />} />
+          <Route path="/image-convert" element={<ImageConvert />} />
+          <Route path="/page-number" element={<PdfPageNumber />} />
+          <Route path="/text-extract" element={<PdfTextExtract />} />
+          <Route path="/sign" element={<PdfSign />} />
+          <Route path="/compare" element={<PdfCompare />} />
           <Route path="/history" element={<TaskHistory />} />
           <Route path="/about" element={<About />} />
         </Routes>

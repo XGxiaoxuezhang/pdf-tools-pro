@@ -19,6 +19,12 @@ const TOOLS = [
   { name: "PDF 水印", desc: "添加文字水印", icon: "shield", tag: "新", group: "安全", to: "/watermark" },
   { name: "PDF 页面重排", desc: "拖拽调整顺序", icon: "layers", tag: "新", group: "编辑", to: "/reorder" },
   { name: "批量处理", desc: "统一处理多个文件", icon: "grid", tag: "新", group: "编辑", to: "/batch" },
+  { name: "PDF 提取图片", desc: "批量导出嵌入图片", icon: "image", tag: "新", group: "编辑", to: "/extract-images" },
+  { name: "图片格式转换", desc: "PNG/JPG/WebP 互转", icon: "image", tag: "新", group: "转换", to: "/image-convert" },
+  { name: "PDF 页码页眉页脚", desc: "添加页码或页眉页脚", icon: "file", tag: "新", group: "编辑", to: "/page-number" },
+  { name: "PDF 文字提取", desc: "提取 PDF 文字内容", icon: "search", tag: "新", group: "编辑", to: "/text-extract" },
+  { name: "PDF 签名", desc: "手写或图片签名", icon: "signature", tag: "新", group: "安全", to: "/sign" },
+  { name: "PDF 对比", desc: "两个版本找差异", icon: "search", tag: "新", group: "编辑", to: "/compare" },
 ];
 
 function ToolCard({ tool, index = 0 }) {
@@ -149,7 +155,7 @@ export default function Home() {
                     <Icon name="spark" size={15} /> 全民好用 PDF 桌面版
                   </div>
                   <h1 className="mt-5 max-w-xl text-4xl font-black leading-tight">复杂 PDF 操作，做成一个按钮的事。</h1>
-                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/65">支持转换、合并、拆分、压缩、加密、旋转、水印、重排、批量处理。本地优先处理，界面保持清爽。</p>
+                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/65">支持转换、合并、拆分、压缩、加密、旋转、水印、重排、批量处理、提取图片、图片转换、页码页眉、文字提取、签名、对比。本地优先处理。</p>
                 </div>
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Link to="/viewer" className="rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 hover:bg-slate-50 transition">选择 PDF 文件</Link>
