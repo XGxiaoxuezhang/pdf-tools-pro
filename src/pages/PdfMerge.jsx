@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { mergePdfs } from "../lib/pdfCore";
+import { addTask } from "../lib/taskStore";
 
 export default function PdfMerge() {
   const [files, setFiles] = useState([]);
@@ -12,11 +13,15 @@ export default function PdfMerge() {
         properties: ["openFile", "multiSelections"],
         filters: [{ name: "PDF Files", extensions: ["pdf"] }],
       });
-      if (!result.canceled && result.filePaths) {
-        // Read files using HTML5 File API or Node.js.
-        // We can't read files directly with File API via paths, so we fetch them as array buffer.
-        // In a real Electron app we can load local files via `file://` protocol or IPC.
-        // But the easiest way is to let the user use the file input.
+      if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+        const loadedFiles = [];
+        for (const filePath of result.filePaths) {
+          const buffer = await window.electronAPI.readFile(filePath);
+          const fileName = filePath.split('\\').pop().split('/').pop();
+          const fileObj = new File([buffer], fileName, { type: "application/pdf" });
+          loadedFiles.push(fileObj);
+        }
+        setFiles(prev => [...prev, ...loadedFiles]);
       }
     }
   };
@@ -52,6 +57,7 @@ export default function PdfMerge() {
         if (!canceled && filePath) {
           const res = await window.electronAPI.saveFile(filePath, mergedBytes);
           if (res.success) {
+            addTask({ file: files.map(f => f.name).join(", "), action: "PDF 合并", size: `${(files.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(2)} MB`, progress: 100, status: "已完成" });
             alert("合并成功并已保存！");
             setFiles([]);
           } else {

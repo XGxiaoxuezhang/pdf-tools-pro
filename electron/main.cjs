@@ -20,8 +20,10 @@ const processFileArg = (args) => {
   return null;
 };
 
-// We remove single instance lock because it interferes with development/restarts.
-// app.on('second-instance') logic is still valid if we re-enable it later.
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
 app.on('second-instance', (event, commandLine, workingDirectory) => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -80,6 +82,7 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+} // end of single-instance else block
 
 // IPC listeners for window actions
 ipcMain.on('window-action', (event, action) => {
@@ -136,28 +139,63 @@ ipcMain.handle('fs:readFile', async (event, filePath) => {
 ipcMain.handle('convertDocument', async (event, mode, inputPath, outputPath, extraArg) => {
   if (mode === 'url2pdf') {
     return new Promise((resolve) => {
+      let resolved = false;
       let win = new BrowserWindow({ show: false, webPreferences: { offscreen: true } });
+
+      const cleanup = () => {
+        if (!win.isDestroyed()) win.destroy();
+      };
+
+      win.webContents.on('did-fail-load', (_event, errorCode, errorDesc) => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          resolve({ status: 'error', message: `无法加载网页 (${errorCode}): ${errorDesc}` });
+        }
+      });
+
+      // Timeout after 30 seconds
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          resolve({ status: 'error', message: '网页加载超时，请检查网址或网络连接。' });
+        }
+      }, 30000);
+
       win.loadURL(inputPath.startsWith('http') ? inputPath : `https://${inputPath}`).then(() => {
         win.webContents.printToPDF({
           printBackground: true,
           landscape: false,
           pageSize: 'A4',
           preferCSSPageSize: true
-        }).then(data => {
-          fs.writeFile(outputPath, data).then(() => {
-            win.destroy();
+        }).then(async (data) => {
+          clearTimeout(timer);
+          if (resolved) return;
+          resolved = true;
+          try {
+            await fs.writeFile(outputPath, data);
+            cleanup();
             resolve({ status: 'success', message: 'URL to PDF conversion successful.' });
-          }).catch(err => {
-            win.destroy();
+          } catch (err) {
+            cleanup();
             resolve({ status: 'error', message: err.message });
-          });
+          }
         }).catch(err => {
-          win.destroy();
-          resolve({ status: 'error', message: err.message });
+          clearTimeout(timer);
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            resolve({ status: 'error', message: err.message });
+          }
         });
       }).catch(err => {
-        win.destroy();
-        resolve({ status: 'error', message: '无法加载网页，请检查网址。' });
+        clearTimeout(timer);
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          resolve({ status: 'error', message: '无法加载网页，请检查网址。' });
+        }
       });
     });
   }

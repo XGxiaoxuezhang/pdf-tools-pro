@@ -17,3 +17,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.custom-outline-container ul { padding-left: 1.2rem; margin-top: 0.2rem; list-style-type: none; }
+.custom-outline-container > .react-pdf__Outline > ul { padding-left: 0; }
+.custom-outline-container li { padding: 4px 0; }
+.custom-outline-container a { text-decoration: none; color: inherit; display: block; border-radius: 6px; padding: 2px 6px; transition: background 0.2s; }
+.custom-outline-container a:hover { background-color: #f1f5f9; color: #e11d48; }

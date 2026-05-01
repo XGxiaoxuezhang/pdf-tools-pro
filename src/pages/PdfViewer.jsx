@@ -11,11 +11,36 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 // Configure pdfjs worker
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
+function useBlobUrl(buffer) {
+  const urlRef = useRef(null);
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+    if (buffer) {
+      const blob = new Blob([buffer], { type: "application/pdf" });
+      urlRef.current = URL.createObjectURL(blob);
+    }
+    setUrl(urlRef.current);
+    return () => {
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+    };
+  }, [buffer]);
+
+  return url;
+}
+
 export default function PdfViewer() {
   const location = useLocation();
   const [file, setFile] = useState(location.state?.externalFile || null);
   const [fileBuffer, setFileBuffer] = useState(location.state?.externalBuffer || null);
-  const [pdfUrl, setPdfUrl] = useState(null);
+  const pdfUrl = useBlobUrl(fileBuffer);
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,17 +51,6 @@ export default function PdfViewer() {
   const [batchFiles, setBatchFiles] = useState([]);
   const [showBatchPanel, setShowBatchPanel] = useState(false);
   const batchInputRef = useRef(null);
-
-  useEffect(() => {
-    if (fileBuffer) {
-      const blob = new Blob([fileBuffer], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setPdfUrl(null);
-    }
-  }, [fileBuffer]);
 
   const handleFileInput = async (e) => {
     const selectedFile = e.target.files[0];
@@ -345,38 +359,29 @@ export default function PdfViewer() {
             </label>
           </div>
         ) : (
-          <>
+          <Document
+            file={pdfUrl}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            loading={<div className="text-slate-500 font-bold">加载 PDF 中...</div>}
+            className="flex flex-1 min-h-0"
+          >
             {/* Outline sidebar */}
             <div className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
               <div className="p-4 border-b border-slate-100 flex items-center gap-2 font-bold text-slate-800">
                 <Icon name="search" size={16} /> 目录导航
               </div>
               <div className="flex-1 overflow-auto p-4 text-sm text-slate-600 custom-outline-container">
-                <style>{`
-                  .custom-outline-container ul { padding-left: 1.2rem; margin-top: 0.2rem; list-style-type: none; }
-                  .custom-outline-container > .react-pdf__Outline > ul { padding-left: 0; }
-                  .custom-outline-container li { padding: 4px 0; }
-                  .custom-outline-container a { text-decoration: none; color: inherit; display: block; border-radius: 6px; padding: 2px 6px; transition: background 0.2s; }
-                  .custom-outline-container a:hover { background-color: #f1f5f9; color: #e11d48; }
-                `}</style>
-                <Document file={pdfUrl}>
-                  <Outline onItemClick={({ pageNumber }) => {
-                    const el = document.getElementById(`page_${pageNumber}`);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }} />
-                </Document>
+                <Outline onItemClick={({ pageNumber }) => {
+                  const el = document.getElementById(`page_${pageNumber}`);
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }} />
               </div>
             </div>
 
             {/* Pages */}
             <div className="flex-1 overflow-auto p-8 flex justify-center relative">
               {isProcessing && <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-center justify-center font-bold text-slate-600">处理中...</div>}
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                loading={<div className="text-slate-500 font-bold">加载 PDF 中...</div>}
-                className="flex flex-col gap-8"
-              >
+              <div className="flex flex-col gap-8">
                 {Array.from(new Array(numPages || 0), (el, index) => (
                   <div key={`page_${index + 1}`} id={`page_${index + 1}`} className="relative group scroll-mt-6">
                     <div className="bg-white shadow-xl rounded-lg overflow-hidden ring-1 ring-slate-900/5 transition-transform hover:scale-[1.01]">
@@ -419,9 +424,9 @@ export default function PdfViewer() {
                     </div>
                   </div>
                 ))}
-              </Document>
+              </div>
             </div>
-          </>
+          </Document>
         )}
       </div>
     </div>

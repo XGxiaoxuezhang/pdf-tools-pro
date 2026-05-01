@@ -90,6 +90,8 @@ def office_to_pdf_linux(input_path, output_path):
 
 def office_to_pdf_windows(input_path, output_path):
     ext = os.path.splitext(input_path)[1].lower()
+    app_obj = None
+    doc_obj = None
     try:
         import win32com.client
         import pythoncom
@@ -97,7 +99,7 @@ def office_to_pdf_windows(input_path, output_path):
 
         abs_in = os.path.abspath(input_path)
         abs_out = os.path.abspath(output_path)
-        
+
         # Define helper to try multiple progids
         def try_dispatch(progids):
             for progid in progids:
@@ -108,47 +110,67 @@ def office_to_pdf_windows(input_path, output_path):
             return None
 
         if ext in ['.doc', '.docx']:
-            # Try MS Word first, then WPS
             word = try_dispatch(['Word.Application', 'KWPS.Application'])
             if not word:
                 raise Exception("WordAppNotFound")
+            app_obj = word
             word.Visible = False
             doc = word.Documents.Open(abs_in)
-            
-            # Use ExportAsFixedFormat to preserve navigation/bookmarks (CreateBookmarks=1)
-            # Signature: OutputFileName, ExportFormat, OpenAfterExport, OptimizeFor, Range, From, To, Item, IncludeDocProps, KeepIRM, CreateBookmarks
+            doc_obj = doc
             try:
                 doc.ExportAsFixedFormat(abs_out, 17, False, 0, 0, 1, 1, 0, True, True, 1)
-            except Exception as e:
-                # Fallback to SaveAs if ExportAsFixedFormat fails (e.g. some WPS versions)
+            except Exception:
                 doc.SaveAs(abs_out, FileFormat=17)
-                
-            doc.Close(False)
-            word.Quit()
         elif ext in ['.xls', '.xlsx']:
             excel = try_dispatch(['Excel.Application', 'ET.Application'])
             if not excel:
                 raise Exception("ExcelAppNotFound")
+            app_obj = excel
             excel.Visible = False
             wb = excel.Workbooks.Open(abs_in)
+            doc_obj = wb
             wb.ExportAsFixedFormat(0, abs_out) # 0 is xlTypePDF
-            wb.Close(False)
-            excel.Quit()
         elif ext in ['.ppt', '.pptx']:
             ppt = try_dispatch(['PowerPoint.Application', 'WPP.Application'])
             if not ppt:
                 raise Exception("PPTAppNotFound")
+            app_obj = ppt
             deck = ppt.Presentations.Open(abs_in, WithWindow=False)
+            doc_obj = deck
             deck.SaveAs(abs_out, 32) # 32 is ppSaveAsPDF
-            deck.Close()
-            ppt.Quit()
         else:
             raise ValueError(f"Unsupported Office format: {ext}")
 
+        # Cleanup on success
+        if doc_obj:
+            try:
+                doc_obj.Close(False)
+            except Exception:
+                pass
+        if app_obj:
+            try:
+                app_obj.Quit()
+            except Exception:
+                pass
         pythoncom.CoUninitialize()
         return {"status": "success", "message": "Office to PDF conversion successful."}
 
     except Exception as e:
+        # Cleanup on failure to prevent orphaned Office processes
+        if doc_obj:
+            try:
+                doc_obj.Close(False)
+            except Exception:
+                pass
+        if app_obj:
+            try:
+                app_obj.Quit()
+            except Exception:
+                pass
+        try:
+            pythoncom.CoUninitialize()
+        except Exception:
+            pass
         err_msg = str(e)
         if "NotFound" in err_msg or "Invalid class string" in err_msg:
             return {"status": "error", "message": f"无法调用系统 {ext} 办公软件接口。建议：请确保您的电脑已安装 Microsoft Office 或 WPS 后重试。"}

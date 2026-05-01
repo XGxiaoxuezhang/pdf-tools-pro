@@ -18,4 +18,8 @@ def create_multi_size_icon(png_path, ico_path):
         print(f"Error creating icon: {e}")
 
 if __name__ == "__main__":
-    create_multi_size_icon('D:/pdf/public/logo.png', 'D:/pdf/build/icon.ico')
+    import sys
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    png_path = os.path.join(base_dir, 'public', 'logo.png')
+    ico_path = os.path.join(base_dir, 'build', 'icon.ico')
+    create_multi_size_icon(png_path, ico_path)

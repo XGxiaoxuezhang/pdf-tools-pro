@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon";
 import { getTasks, clearTasks } from "../lib/taskStore";
 
@@ -59,6 +59,9 @@ function TaskItem({ task }) {
 export default function Home() {
   const [activeTab, setActiveTab] = useState("全部");
   const [tasks, setTasks] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadTasks = () => setTasks(getTasks());
@@ -68,9 +71,43 @@ export default function Home() {
   }, []);
 
   const visibleTools = useMemo(() => {
-    if (activeTab === "全部") return TOOLS;
-    return TOOLS.filter((tool) => tool.group === activeTab);
-  }, [activeTab]);
+    let filtered = activeTab === "全部" ? TOOLS : TOOLS.filter((tool) => tool.group === activeTab);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(tool => tool.name.toLowerCase().includes(q) || tool.desc.toLowerCase().includes(q));
+    }
+    return filtered;
+  }, [activeTab, searchQuery]);
+
+  const handleAddFile = async () => {
+    if (window.electronAPI) {
+      const result = await window.electronAPI.showOpenDialog({
+        properties: ["openFile", "multiSelections"],
+        filters: [{ name: "PDF Files", extensions: ["pdf"] }],
+      });
+      if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+        const filePath = result.filePaths[0];
+        const ext = filePath.toLowerCase().split('.').pop();
+        if (ext === 'pdf') {
+          const buffer = await window.electronAPI.readFile(filePath);
+          const fileName = filePath.split('\\').pop().split('/').pop();
+          const fileObj = new File([buffer], fileName, { type: "application/pdf" });
+          navigate("/viewer", { state: { externalFile: fileObj, externalBuffer: buffer } });
+        } else {
+          navigate("/convert", { state: { externalFilePath: filePath } });
+        }
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleWebFileInput = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      navigate("/viewer", { state: { externalFile: selectedFile } });
+    }
+  };
 
   return (
     <>
@@ -80,12 +117,20 @@ export default function Home() {
           <div className="text-xs text-slate-500">拖拽文件开始处理，也可以从下方选择常用工具。</div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden h-10 w-[300px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-400 shadow-sm lg:flex">
-            <Icon name="search" size={17} /> 搜索工具、文件或任务记录
+          <div className="hidden h-10 w-[300px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm shadow-sm lg:flex">
+            <Icon name="search" size={17} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索工具..."
+              className="flex-1 bg-transparent outline-none text-slate-700 placeholder-slate-400"
+            />
           </div>
-          <button type="button" className="flex items-center gap-2 rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20">
+          <button type="button" onClick={handleAddFile} className="flex items-center gap-2 rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20">
             <Icon name="plus" size={17} /> 添加文件
           </button>
+          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleWebFileInput} />
         </div>
       </div>
 

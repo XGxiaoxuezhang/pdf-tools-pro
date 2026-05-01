@@ -26,7 +26,7 @@ function ExternalFileListener() {
   const navigate = useNavigate();
   useEffect(() => {
     if (window.electronAPI && window.electronAPI.onOpenExternalFile) {
-      window.electronAPI.onOpenExternalFile(async (filePath) => {
+      const handler = async (filePath) => {
         try {
           const ext = filePath.toLowerCase().split('.').pop();
           if (ext === 'pdf') {
@@ -40,7 +40,13 @@ function ExternalFileListener() {
         } catch (err) {
           console.error("Failed to load external file", err);
         }
-      });
+      };
+      window.electronAPI.onOpenExternalFile(handler);
+      return () => {
+        if (window.electronAPI.removeOpenExternalFileListener) {
+          window.electronAPI.removeOpenExternalFileListener(handler);
+        }
+      };
     }
   }, [navigate]);
   return null;

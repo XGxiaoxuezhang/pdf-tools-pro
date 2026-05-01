@@ -134,8 +134,8 @@ export default function PdfSecure() {
               <label className="block text-xs font-bold text-slate-500 mb-2">
                 {mode === "encrypt" ? "此密码将用于打开文件" : "输入此文件当前的打开密码"}
               </label>
-              <input 
-                type="text" 
+              <input
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="在此输入密码"

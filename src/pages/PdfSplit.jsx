@@ -32,14 +32,26 @@ export default function PdfSplit() {
       part = part.trim();
       if (!part) continue;
       if (part.includes('-')) {
-        const [start, end] = part.split('-').map(n => parseInt(n));
-        if (start && end && start <= end) {
-          for (let i = start; i <= end; i++) {
-            if (i >= 1 && i <= maxPage) pages.add(i - 1);
-          }
+        const [startStr, endStr] = part.split('-');
+        const start = parseInt(startStr);
+        const end = parseInt(endStr);
+        if (isNaN(start) || isNaN(end)) {
+          alert(`"${part}" 不是有效的页码范围，请输入数字。`);
+          return [];
+        }
+        if (start > end) {
+          alert(`页码范围 "${part}" 起始页不能大于结束页。`);
+          return [];
+        }
+        for (let i = start; i <= end; i++) {
+          if (i >= 1 && i <= maxPage) pages.add(i - 1);
         }
       } else {
         const num = parseInt(part);
+        if (isNaN(num)) {
+          alert(`"${part}" 不是有效的页码，请输入数字。`);
+          return [];
+        }
         if (num >= 1 && num <= maxPage) pages.add(num - 1);
       }
     }
@@ -91,7 +103,7 @@ export default function PdfSplit() {
             const dir = filePaths[0];
             for (let j = 0; j < splitDocs.length; j++) {
               const fileName = `${file.name.replace(/\.[^/.]+$/, "")}_部分_${j + 1}.pdf`;
-              const savePath = `${dir}\\${fileName}`;
+              const savePath = dir + (dir.includes('/') ? '/' : '\\') + fileName;
               await window.electronAPI.saveFile(savePath, splitDocs[j]);
             }
             alert(`成功！已拆分为 ${splitDocs.length} 个文件并保存到 ${dir}`);
