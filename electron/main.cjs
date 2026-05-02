@@ -468,26 +468,39 @@ ipcMain.handle('get-machine-id', () => {
 
 ipcMain.handle('check-activation', async () => {
   try {
-    if (fsSync.existsSync(ACTIVATION_FILE)) {
-      const data = JSON.parse(fsSync.readFileSync(ACTIVATION_FILE, 'utf-8'));
-      const currentMachineId = getMachineId();
-      if (data.machineId === currentMachineId && data.code) {
-        // Verify locally using HMAC
-        const secret = data.secret || '';
-        if (secret) {
-          const expectedHash = crypto.createHmac('sha256', secret).update(currentMachineId).digest();
-          const expectedCode = expectedHash.slice(0, 18).toString('base64url');
-          if (expectedCode === data.code) {
-            return { activated: true, activatedAt: data.activatedAt };
-          }
-        }
-        // Fallback: trust local file if machineId matches (for offline after initial online activation)
-        if (data.verified) {
-          return { activated: true, activatedAt: data.activatedAt };
-        }
-      }
+    if (!fsSync.existsSync(ACTIVATION_FILE)) return { activated: false };
+    const data = JSON.parse(fsSync.readFileSync(ACTIVATION_FILE, 'utf-8'));
+    const currentMachineId = getMachineId();
+    if (!data.machineId || !data.code || data.machineId !== currentMachineId) {
+      return { activated: false };
     }
-    return { activated: false };
+
+    // Always verify with server to check revocation
+    try {
+      const body = JSON.stringify({ machineId: currentMachineId, code: data.code });
+      const result = await new Promise((resolve, reject) => {
+        const url = new URL(`${CF_WORKER_URL}/api/check-activation`);
+        const req = https.request({
+          hostname: url.hostname, port: 443, path: url.pathname, method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'User-Agent': 'pdf-tools-pro' },
+        }, (res) => {
+          let d = ''; res.on('data', c => d += c);
+          res.on('end', () => { try { resolve(JSON.parse(d)); } catch { reject(new Error('parse error')); } });
+        });
+        req.on('error', reject); req.write(body); req.end();
+      });
+
+      if (result.revoked) {
+        // Clear local activation
+        try { fsSync.unlinkSync(ACTIVATION_FILE); } catch (_) {}
+        return { activated: false, revoked: true };
+      }
+      return { activated: result.activated, activatedAt: data.activatedAt };
+    } catch {
+      // Offline: trust local file if it was previously verified
+      if (data.verified) return { activated: true, activatedAt: data.activatedAt };
+      return { activated: false };
+    }
   } catch {
     return { activated: false };
   }

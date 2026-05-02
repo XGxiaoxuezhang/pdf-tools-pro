@@ -89,7 +89,7 @@ export default function Membership() {
                 </svg>
               </div>
               <h2 className="text-2xl font-black text-orange-800">未激活</h2>
-              <p className="mt-2 text-sm text-orange-600">请获取并输入激活码以解锁高级功能</p>
+              <p className="mt-2 text-sm text-orange-600">请按下方步骤获取激活码</p>
             </div>
           )}
 
@@ -110,7 +110,6 @@ export default function Membership() {
                 {copied ? "已复制" : "复制"}
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-400">请将此机器码发送给开发者以获取激活码</p>
           </div>
 
           {/* 激活码输入 */}
@@ -139,6 +138,49 @@ export default function Membership() {
                   {message.text}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* 开通会员指引 */}
+          {!isActivated && (
+            <div className="mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6">
+              <h3 className="font-bold text-slate-900 text-lg mb-4">开通会员步骤</h3>
+              <div className="space-y-3 text-sm text-slate-600">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold">1</span>
+                  <span>点击上方「复制」按钮，复制您的机器码</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold">2</span>
+                  <span>扫描下方赞赏码进行付款（金额随意）</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold">3</span>
+                  <span>将<strong>赞赏截图</strong>和<strong>机器码</strong>发送至邮箱：</span>
+                </div>
+                <div className="ml-9">
+                  <a href="mailto:2684779302@qq.com" className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-blue-700 font-bold hover:bg-blue-100 transition">
+                    <Icon name="user" size={16} />
+                    2684779302@qq.com
+                  </a>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold">4</span>
+                  <span>收到激活码后，粘贴到上方输入框，点击「激活」即可</span>
+                </div>
+              </div>
+
+              {/* 赞赏二维码 */}
+              <div className="mt-6 flex items-center justify-center gap-8">
+                <div className="text-center">
+                  <img src="./wechat-pay.png" alt="微信赞赏码" className="w-40 h-40 rounded-xl shadow-md object-contain bg-white" />
+                  <p className="mt-2 text-xs text-slate-500 font-bold">微信赞赏</p>
+                </div>
+                <div className="text-center">
+                  <img src="./alipay-pay.jpg" alt="支付宝赞赏码" className="w-40 h-40 rounded-xl shadow-md object-contain bg-white" />
+                  <p className="mt-2 text-xs text-slate-500 font-bold">支付宝赞赏</p>
+                </div>
+              </div>
             </div>
           )}
 
