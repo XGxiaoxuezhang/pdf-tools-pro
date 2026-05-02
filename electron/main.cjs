@@ -496,27 +496,46 @@ ipcMain.handle('check-activation', async () => {
 ipcMain.handle('activate', async (event, code) => {
   try {
     const machineId = getMachineId();
-    const res = await net.fetch(`${CF_WORKER_URL}/api/activate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': 'pdf-tools-pro' },
-      body: JSON.stringify({ machineId, code }),
+    const body = JSON.stringify({ machineId, code });
+
+    const result = await new Promise((resolve, reject) => {
+      const url = new URL(`${CF_WORKER_URL}/api/activate`);
+      const req = https.request({
+        hostname: url.hostname,
+        port: 443,
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'User-Agent': 'pdf-tools-pro',
+        },
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch { reject(new Error('响应解析失败')); }
+        });
+      });
+      req.on('error', reject);
+      req.write(body);
+      req.end();
     });
-    const result = await res.json();
 
     if (result.success) {
-      // Save activation locally
-      const data = {
+      const activationData = {
         machineId,
         code,
         verified: true,
         activatedAt: new Date().toISOString(),
       };
-      fsSync.writeFileSync(ACTIVATION_FILE, JSON.stringify(data, null, 2));
+      fsSync.writeFileSync(ACTIVATION_FILE, JSON.stringify(activationData, null, 2));
       return { success: true, message: '激活成功' };
     }
     return { success: false, message: result.message || '激活码无效' };
   } catch (err) {
-    return { success: false, message: '网络错误，请检查网络连接后重试' };
+    return { success: false, message: '网络错误：' + err.message };
   }
 });
 
