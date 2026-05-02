@@ -444,7 +444,7 @@ ipcMain.handle('update:install', async (event, installerPath) => {
 // ---- 会员激活 ----
 
 const ACTIVATION_FILE = path.join(app.getPath('userData'), 'activation.json');
-const CF_WORKER_URL = 'https://pdf-tools-activation.a2684779302.workers.dev';
+const CF_WORKER_URL = 'https://pdfactive.030924.xyz';
 
 function getMachineId() {
   const interfaces = os.networkInterfaces();
