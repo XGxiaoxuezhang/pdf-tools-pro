@@ -6,6 +6,7 @@ import { addTask } from "../lib/taskStore";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { MembershipGuard } from "../lib/featureGate";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -115,6 +116,7 @@ export default function PdfReorder() {
   };
 
   return (
+    <MembershipGuard>
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">PDF 页面重排</h1>
@@ -188,5 +190,6 @@ export default function PdfReorder() {
         </div>
       )}
     </div>
+    </MembershipGuard>
   );
 }

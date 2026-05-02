@@ -3,6 +3,7 @@ import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
 import { pdfjs } from "react-pdf";
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { MembershipGuard } from "../lib/featureGate";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -105,6 +106,7 @@ export default function PdfTextExtract() {
   const wordCount = allText.split(/\s+/).filter(Boolean).length;
 
   return (
+    <MembershipGuard>
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">PDF 文字提取</h1>
@@ -202,5 +204,6 @@ export default function PdfTextExtract() {
         </div>
       </div>
     </div>
+    </MembershipGuard>
   );
 }

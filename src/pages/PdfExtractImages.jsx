@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
+import { MembershipGuard } from "../lib/featureGate";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -154,6 +155,7 @@ export default function PdfExtractImages() {
   };
 
   return (
+    <MembershipGuard>
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">PDF 提取图片</h1>
@@ -236,5 +238,6 @@ export default function PdfExtractImages() {
         </div>
       </div>
     </div>
+    </MembershipGuard>
   );
 }

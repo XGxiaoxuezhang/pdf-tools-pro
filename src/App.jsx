@@ -20,6 +20,8 @@ import PdfSign from "./pages/PdfSign";
 import PdfCompare from "./pages/PdfCompare";
 import TaskHistory from "./pages/TaskHistory";
 import About from "./pages/About";
+import Membership from "./pages/Membership";
+import { ActivationProvider } from "./lib/featureGate";
 
 function PlaceholderPage({ title }) {
   return (
@@ -65,30 +67,33 @@ function ExternalFileListener() {
 export default function App() {
   return (
     <HashRouter>
-      <Layout>
-        <ExternalFileListener />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/merge" element={<PdfMerge />} />
-          <Route path="/split" element={<PdfSplit />} />
-          <Route path="/viewer" element={<PdfViewer />} />
-          <Route path="/compress" element={<PdfCompress />} />
-          <Route path="/convert" element={<PdfConvert />} />
-          <Route path="/secure" element={<PdfSecure />} />
-          <Route path="/rotate" element={<PdfRotate />} />
-          <Route path="/watermark" element={<PdfWatermark />} />
-          <Route path="/reorder" element={<PdfReorder />} />
-          <Route path="/batch" element={<PdfBatch />} />
-          <Route path="/extract-images" element={<PdfExtractImages />} />
-          <Route path="/image-convert" element={<ImageConvert />} />
-          <Route path="/page-number" element={<PdfPageNumber />} />
-          <Route path="/text-extract" element={<PdfTextExtract />} />
-          <Route path="/sign" element={<PdfSign />} />
-          <Route path="/compare" element={<PdfCompare />} />
-          <Route path="/history" element={<TaskHistory />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-      </Layout>
+      <ActivationProvider>
+        <Layout>
+          <ExternalFileListener />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/merge" element={<PdfMerge />} />
+            <Route path="/split" element={<PdfSplit />} />
+            <Route path="/viewer" element={<PdfViewer />} />
+            <Route path="/compress" element={<PdfCompress />} />
+            <Route path="/convert" element={<PdfConvert />} />
+            <Route path="/secure" element={<PdfSecure />} />
+            <Route path="/rotate" element={<PdfRotate />} />
+            <Route path="/watermark" element={<PdfWatermark />} />
+            <Route path="/reorder" element={<PdfReorder />} />
+            <Route path="/batch" element={<PdfBatch />} />
+            <Route path="/extract-images" element={<PdfExtractImages />} />
+            <Route path="/image-convert" element={<ImageConvert />} />
+            <Route path="/page-number" element={<PdfPageNumber />} />
+            <Route path="/text-extract" element={<PdfTextExtract />} />
+            <Route path="/sign" element={<PdfSign />} />
+            <Route path="/compare" element={<PdfCompare />} />
+            <Route path="/history" element={<TaskHistory />} />
+            <Route path="/membership" element={<Membership />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
+        </Layout>
+      </ActivationProvider>
     </HashRouter>
   );
 }

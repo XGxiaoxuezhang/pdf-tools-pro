@@ -4,7 +4,7 @@
   "description": "全民好用PDF桌面版 - 本地化PDF全能工具箱",
   "author": "朱澄亮",
   "private": true,
-  "version": "1.0.8",
+  "version": "1.0.9",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {

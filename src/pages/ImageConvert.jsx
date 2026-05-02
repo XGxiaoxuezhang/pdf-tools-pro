@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
+import { MembershipGuard } from "../lib/featureGate";
 
 const FORMATS = [
   { key: "image/png", label: "PNG", ext: "png", desc: "无损压缩，支持透明" },
@@ -122,6 +123,7 @@ export default function ImageConvert() {
   };
 
   return (
+    <MembershipGuard>
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">图片格式转换</h1>
@@ -200,5 +202,6 @@ export default function ImageConvert() {
         </div>
       </div>
     </div>
+    </MembershipGuard>
   );
 }

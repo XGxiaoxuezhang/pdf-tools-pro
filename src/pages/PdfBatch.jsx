@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { rotatePdf, addWatermark } from "../lib/pdfCore";
 import { addTask } from "../lib/taskStore";
+import { MembershipGuard } from "../lib/featureGate";
 
 const BATCH_MODES = [
   { key: "compress", label: "批量压缩", icon: "zap", desc: "统一压缩多个 PDF 文件" },
@@ -121,6 +122,7 @@ export default function PdfBatch() {
   };
 
   return (
+    <MembershipGuard>
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">批量处理</h1>
@@ -234,5 +236,6 @@ export default function PdfBatch() {
         </div>
       </div>
     </div>
+    </MembershipGuard>
   );
 }

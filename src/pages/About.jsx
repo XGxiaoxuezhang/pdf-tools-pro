@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Icon from "../components/Icon";
 
 export default function About() {
-  const [version, setVersion] = useState("1.0.8");
+  const [version, setVersion] = useState("1.0.9");
   const [updateStatus, setUpdateStatus] = useState(null); // null | "checking" | "up-to-date" | "available" | "downloading" | "ready" | "error"
   const [updateInfo, setUpdateInfo] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(null);

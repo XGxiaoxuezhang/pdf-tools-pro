@@ -40,3 +40,6 @@ debug.log
 test.js
 test.cjs
 convert_icon.py
+
+# CF Worker (contains secrets)
+cf-worker/

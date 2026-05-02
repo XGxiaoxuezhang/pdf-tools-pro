@@ -18,4 +18,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   installUpdate: (filePath) => ipcRenderer.invoke('update:install', filePath),
   onUpdateProgress: (callback) => ipcRenderer.on('update:download-progress', (_event, data) => callback(data)),
   removeUpdateProgressListener: () => ipcRenderer.removeAllListeners('update:download-progress'),
+  // 会员激活
+  getMachineId: () => ipcRenderer.invoke('get-machine-id'),
+  checkActivation: () => ipcRenderer.invoke('check-activation'),
+  activate: (code) => ipcRenderer.invoke('activate', code),
 });

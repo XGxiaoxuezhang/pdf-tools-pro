@@ -5,6 +5,7 @@ const fsSync = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
 const https = require('https');
+const crypto = require('crypto');
 
 // Removed squirrel startup as we use electron-builder
 
@@ -437,6 +438,85 @@ ipcMain.handle('update:install', async (event, installerPath) => {
     app.quit();
   } catch (err) {
     return { success: false, error: err.message };
+  }
+});
+
+// ---- 会员激活 ----
+
+const ACTIVATION_FILE = path.join(app.getPath('userData'), 'activation.json');
+const CF_WORKER_URL = 'https://pdf-tools-activation.a2684779302.workers.dev';
+
+function getMachineId() {
+  const interfaces = os.networkInterfaces();
+  let mac = '';
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (!iface.internal && iface.mac && iface.mac !== '00:00:00:00:00:00') {
+        mac = iface.mac;
+        break;
+      }
+    }
+    if (mac) break;
+  }
+  const raw = mac + '|' + os.hostname() + '|' + os.platform() + '|' + os.arch();
+  return crypto.createHash('sha256').update(raw).digest('hex');
+}
+
+ipcMain.handle('get-machine-id', () => {
+  return getMachineId();
+});
+
+ipcMain.handle('check-activation', async () => {
+  try {
+    if (fsSync.existsSync(ACTIVATION_FILE)) {
+      const data = JSON.parse(fsSync.readFileSync(ACTIVATION_FILE, 'utf-8'));
+      const currentMachineId = getMachineId();
+      if (data.machineId === currentMachineId && data.code) {
+        // Verify locally using HMAC
+        const secret = data.secret || '';
+        if (secret) {
+          const expectedHash = crypto.createHmac('sha256', secret).update(currentMachineId).digest();
+          const expectedCode = expectedHash.slice(0, 18).toString('base64url');
+          if (expectedCode === data.code) {
+            return { activated: true, activatedAt: data.activatedAt };
+          }
+        }
+        // Fallback: trust local file if machineId matches (for offline after initial online activation)
+        if (data.verified) {
+          return { activated: true, activatedAt: data.activatedAt };
+        }
+      }
+    }
+    return { activated: false };
+  } catch {
+    return { activated: false };
+  }
+});
+
+ipcMain.handle('activate', async (event, code) => {
+  try {
+    const machineId = getMachineId();
+    const res = await net.fetch(`${CF_WORKER_URL}/api/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'pdf-tools-pro' },
+      body: JSON.stringify({ machineId, code }),
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      // Save activation locally
+      const data = {
+        machineId,
+        code,
+        verified: true,
+        activatedAt: new Date().toISOString(),
+      };
+      fsSync.writeFileSync(ACTIVATION_FILE, JSON.stringify(data, null, 2));
+      return { success: true, message: '激活成功' };
+    }
+    return { success: false, message: result.message || '激活码无效' };
+  } catch (err) {
+    return { success: false, message: '网络错误，请检查网络连接后重试' };
   }
 });
 

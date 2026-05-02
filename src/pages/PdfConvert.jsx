@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
+import { MembershipGuard } from "../lib/featureGate";
 
 export default function PdfConvert() {
   const location = useLocation();
@@ -97,6 +98,7 @@ export default function PdfConvert() {
   };
 
   return (
+    <MembershipGuard>
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 flex items-center justify-between shrink-0">
         <div>
@@ -215,5 +217,6 @@ export default function PdfConvert() {
         </div>
       </div>
     </div>
+    </MembershipGuard>
   );
 }
