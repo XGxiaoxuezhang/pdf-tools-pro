@@ -523,7 +523,20 @@ ipcMain.handle('update:install', async (event, installerPath) => {
 const ACTIVATION_FILE = path.join(app.getPath('userData'), 'activation.json');
 const CF_WORKER_URL = 'https://pdfactive.030924.xyz';
 
-function getMachineId() {
+function readActivationFile() {
+  try {
+    if (!fsSync.existsSync(ACTIVATION_FILE)) return null;
+    return JSON.parse(fsSync.readFileSync(ACTIVATION_FILE, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+function writeActivationFile(data) {
+  fsSync.writeFileSync(ACTIVATION_FILE, JSON.stringify(data, null, 2));
+}
+
+function getCurrentMachineId() {
   const interfaces = os.networkInterfaces();
   let mac = '';
   for (const name of Object.keys(interfaces)) {
@@ -539,40 +552,77 @@ function getMachineId() {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
+function getMachineId() {
+  const activation = readActivationFile();
+  if (activation?.machineId && activation?.code && activation?.verified) {
+    return activation.machineId;
+  }
+  return getCurrentMachineId();
+}
+
+function uniqueValues(values) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function postActivationJson(pathname, payload) {
+  const body = JSON.stringify(payload);
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${CF_WORKER_URL}${pathname}`);
+    const req = https.request({
+      hostname: url.hostname,
+      port: 443,
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+        'User-Agent': 'pdf-tools-pro',
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error('响应解析失败')); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 ipcMain.handle('get-machine-id', () => {
   return getMachineId();
 });
 
 ipcMain.handle('check-activation', async () => {
   try {
-    if (!fsSync.existsSync(ACTIVATION_FILE)) return { activated: false };
-    const data = JSON.parse(fsSync.readFileSync(ACTIVATION_FILE, 'utf-8'));
-    const currentMachineId = getMachineId();
-    if (!data.machineId || !data.code || data.machineId !== currentMachineId) {
+    const data = readActivationFile();
+    if (!data) return { activated: false };
+    const machineIds = uniqueValues([data.machineId, getCurrentMachineId()]);
+    if (!data.machineId || !data.code || machineIds.length === 0) {
       return { activated: false };
     }
 
-    // Always verify with server to check revocation
+    // Always verify with server to check revocation. Try the saved legacy ID first
+    // so an OS/network adapter reorder does not break existing activations.
     try {
-      const body = JSON.stringify({ machineId: currentMachineId, code: data.code });
-      const result = await new Promise((resolve, reject) => {
-        const url = new URL(`${CF_WORKER_URL}/api/check-activation`);
-        const req = https.request({
-          hostname: url.hostname, port: 443, path: url.pathname, method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'User-Agent': 'pdf-tools-pro' },
-        }, (res) => {
-          let d = ''; res.on('data', c => d += c);
-          res.on('end', () => { try { resolve(JSON.parse(d)); } catch { reject(new Error('parse error')); } });
-        });
-        req.on('error', reject); req.write(body); req.end();
-      });
-
-      if (result.revoked) {
-        // Clear local activation
-        try { fsSync.unlinkSync(ACTIVATION_FILE); } catch (_) {}
-        return { activated: false, revoked: true };
+      for (const machineId of machineIds) {
+        const result = await postActivationJson('/api/check-activation', { machineId, code: data.code });
+        if (result.revoked) {
+          // Clear local activation
+          try { fsSync.unlinkSync(ACTIVATION_FILE); } catch (_) {}
+          return { activated: false, revoked: true };
+        }
+        if (result.activated) {
+          if (data.machineId !== machineId) {
+            writeActivationFile({ ...data, machineId, verified: true });
+          }
+          return { activated: true, activatedAt: data.activatedAt };
+        }
       }
-      return { activated: result.activated, activatedAt: data.activatedAt };
+      return { activated: false };
     } catch {
       // Offline: trust local file if it was previously verified
       if (data.verified) return { activated: true, activatedAt: data.activatedAt };
@@ -585,45 +635,25 @@ ipcMain.handle('check-activation', async () => {
 
 ipcMain.handle('activate', async (event, code) => {
   try {
-    const machineId = getMachineId();
-    const body = JSON.stringify({ machineId, code });
+    const existing = readActivationFile();
+    const machineIds = uniqueValues([existing?.machineId, getCurrentMachineId()]);
+    let lastMessage = '';
 
-    const result = await new Promise((resolve, reject) => {
-      const url = new URL(`${CF_WORKER_URL}/api/activate`);
-      const req = https.request({
-        hostname: url.hostname,
-        port: 443,
-        path: url.pathname,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-          'User-Agent': 'pdf-tools-pro',
-        },
-      }, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-          try { resolve(JSON.parse(data)); }
-          catch { reject(new Error('响应解析失败')); }
-        });
-      });
-      req.on('error', reject);
-      req.write(body);
-      req.end();
-    });
-
-    if (result.success) {
-      const activationData = {
-        machineId,
-        code,
-        verified: true,
-        activatedAt: new Date().toISOString(),
-      };
-      fsSync.writeFileSync(ACTIVATION_FILE, JSON.stringify(activationData, null, 2));
-      return { success: true, message: '激活成功' };
+    for (const machineId of machineIds) {
+      const result = await postActivationJson('/api/activate', { machineId, code });
+      if (result.success) {
+        const activationData = {
+          machineId,
+          code,
+          verified: true,
+          activatedAt: new Date().toISOString(),
+        };
+        writeActivationFile(activationData);
+        return { success: true, message: '激活成功' };
+      }
+      lastMessage = result.message || lastMessage;
     }
-    return { success: false, message: result.message || '激活码无效' };
+    return { success: false, message: lastMessage || '激活码无效' };
   } catch (err) {
     return { success: false, message: '网络错误：' + err.message };
   }
