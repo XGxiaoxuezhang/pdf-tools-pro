@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
 import { MembershipGuard } from "../lib/featureGate";
-import { Document, Page, pdfjs } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -81,7 +81,6 @@ export default function PdfExtractImages() {
   const [filePath, setFilePath] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [images, setImages] = useState([]);
-  const [numPages, setNumPages] = useState(null);
 
   const handleSelectFiles = async () => {
     if (window.electronAPI) {

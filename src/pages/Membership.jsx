@@ -61,7 +61,7 @@ export default function Membership() {
     <div className="flex h-full flex-col p-6 overflow-auto">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-black text-slate-900">会员中心</h1>
-        <p className="mt-1 text-sm text-slate-500">激活会员，解锁全部高级功能。</p>
+        <p className="mt-1 text-sm text-slate-500">官方构建会员服务，用于解锁高级功能并支持持续维护。</p>
       </div>
 
       <div className="flex flex-1 gap-6 min-h-[400px]">
@@ -78,7 +78,7 @@ export default function Membership() {
                 <Icon name="check" size={32} />
               </div>
               <h2 className="text-2xl font-black text-green-800">已激活会员</h2>
-              <p className="mt-2 text-sm text-green-600">全部高级功能已解锁，感谢您的支持！</p>
+              <p className="mt-2 text-sm text-green-600">官方构建的高级功能已解锁，感谢您的支持！</p>
             </div>
           ) : (
             <div className="rounded-2xl bg-orange-50 border border-orange-200 p-8 text-center mb-8">
@@ -152,7 +152,7 @@ export default function Membership() {
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold">2</span>
-                  <span>扫描下方赞赏码进行付款（金额随意）</span>
+                  <span>扫描下方收款码完成支持付款</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold">3</span>

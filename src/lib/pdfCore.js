@@ -60,11 +60,6 @@ export async function addWatermark(fileBuffer, opts) {
   for (const page of pages) {
     const { width, height } = page.getSize();
     const textWidth = font.widthOfTextAtSize(text, fontSize);
-    const textHeight = fontSize;
-
-    // Center the watermark on the page
-    const x = (width - textWidth * Math.cos(angle * Math.PI / 180)) / 2;
-    const y = (height - textHeight) / 2;
 
     page.drawText(text, {
       x: width / 2 - textWidth / 2,

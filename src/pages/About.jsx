@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Icon from "../components/Icon";
 
 export default function About() {
@@ -8,26 +8,7 @@ export default function About() {
   const [downloadProgress, setDownloadProgress] = useState(null);
   const [downloadedFilePath, setDownloadedFilePath] = useState(null);
 
-  useEffect(() => {
-    if (window.electronAPI?.getAppVersion) {
-      window.electronAPI.getAppVersion().then(v => { if (v) setVersion(v); });
-    }
-    checkUpdate();
-
-    return () => {
-      window.electronAPI?.removeUpdateProgressListener?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (updateStatus === "downloading") {
-      window.electronAPI?.onUpdateProgress?.((data) => {
-        setDownloadProgress(data);
-      });
-    }
-  }, [updateStatus]);
-
-  const checkUpdate = async () => {
+  const checkUpdate = useCallback(async () => {
     if (!window.electronAPI?.checkForUpdates) return;
     setUpdateStatus("checking");
     setDownloadProgress(null);
@@ -47,7 +28,26 @@ export default function About() {
     } catch {
       setUpdateStatus("error");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then(v => { if (v) setVersion(v); });
+    }
+    checkUpdate();
+
+    return () => {
+      window.electronAPI?.removeUpdateProgressListener?.();
+    };
+  }, [checkUpdate]);
+
+  useEffect(() => {
+    if (updateStatus === "downloading") {
+      window.electronAPI?.onUpdateProgress?.((data) => {
+        setDownloadProgress(data);
+      });
+    }
+  }, [updateStatus]);
 
   const startDownload = async () => {
     if (!window.electronAPI?.downloadUpdate) return;
@@ -93,7 +93,7 @@ export default function About() {
       <div className="mb-6 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-black text-slate-900">关于我们</h1>
-          <p className="mt-1 text-sm text-slate-500">全民好用 PDF，您桌面上的终极开源生产力工具。</p>
+          <p className="mt-1 text-sm text-slate-500">全民好用 PDF，本地优先、开源透明的桌面生产力工具。</p>
         </div>
       </div>
 
@@ -216,7 +216,7 @@ export default function About() {
           </div>
 
           <p className="mt-8 text-sm text-slate-600 max-w-xl leading-relaxed">
-            这是一款专注于为您提供极致本地化体验的 PDF 全能工具箱。无需联网，所有文件处理都在您的电脑本地完成，极大保障了文档的安全性与隐私。
+            这是一款本地优先的 PDF 全能工具箱。源码开放，用户可自行编译使用；官方构建提供会员激活、自动更新和高级能力。常规 PDF 文件处理在您的电脑本地完成，会员激活、检查更新、URL 转 PDF 等明确联网功能会访问网络。
           </p>
 
           <div className="mt-10 w-full max-w-2xl text-left">

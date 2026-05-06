@@ -138,6 +138,68 @@ ipcMain.handle('fs:readFile', async (event, filePath) => {
   }
 });
 
+const fileExists = (filePath) => {
+  try {
+    return fsSync.existsSync(filePath);
+  } catch {
+    return false;
+  }
+};
+
+const getEngineRoot = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return path.join(__dirname, '../python_engine');
+  }
+  return path.join(process.resourcesPath, 'python_engine');
+};
+
+const getConverterCommand = () => {
+  const engineRoot = getEngineRoot();
+  const scriptPath = path.join(engineRoot, 'converter.py');
+  const exePath = path.join(engineRoot, 'converter.exe');
+
+  if (process.platform === 'win32' && fileExists(exePath)) {
+    return { command: exePath, baseArgs: [], kind: 'bundled-exe' };
+  }
+
+  if (!fileExists(scriptPath)) {
+    return {
+      error: `未找到转换引擎脚本：${scriptPath}`,
+    };
+  }
+
+  const configuredPython = process.env.PDF_TOOLS_PYTHON;
+  const candidates = configuredPython
+    ? [configuredPython]
+    : (process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python']);
+
+  return {
+    command: candidates[0],
+    fallbacks: candidates.slice(1),
+    baseArgs: [scriptPath],
+    kind: 'python-script',
+  };
+};
+
+const spawnConverter = (engine, args) => {
+  const candidates = [engine.command, ...(engine.fallbacks || [])];
+  let lastError = null;
+
+  for (const command of candidates) {
+    try {
+      const child = spawn(command, [...engine.baseArgs, ...args], { windowsHide: true });
+      child.once('error', (err) => {
+        lastError = err;
+      });
+      return { child, command };
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  return { error: lastError };
+};
+
 ipcMain.handle('convertDocument', async (event, mode, inputPath, outputPath, extraArg) => {
   if (mode === 'url2pdf') {
     return new Promise((resolve) => {
@@ -203,41 +265,56 @@ ipcMain.handle('convertDocument', async (event, mode, inputPath, outputPath, ext
   }
 
   return new Promise((resolve) => {
-    // Determine path to python executable or script
-    const isDev = process.env.NODE_ENV === 'development';
-    
-    let pythonProc;
-    if (isDev) {
-      const scriptPath = path.join(__dirname, '../python_engine/converter.py');
-      const args = [scriptPath, mode, inputPath, outputPath];
-      if (extraArg) args.push(extraArg);
-      pythonProc = spawn('python', args);
-    } else {
-      const exePath = path.join(process.resourcesPath, 'python_engine/converter.exe');
-      const args = [mode, inputPath, outputPath];
-      if (extraArg) args.push(extraArg);
-      pythonProc = spawn(exePath, args);
+    const engine = getConverterCommand();
+    if (engine.error) {
+      resolve({ status: 'error', message: engine.error });
+      return;
     }
+
+    const args = [mode, inputPath, outputPath];
+    if (extraArg) args.push(extraArg);
+
+    const spawned = spawnConverter(engine, args);
+    if (spawned.error || !spawned.child) {
+      resolve({
+        status: 'error',
+        message: '无法启动转换引擎。请安装 Python 3 并执行：pip install -r python_engine/requirements.txt',
+        details: spawned.error?.message || '',
+      });
+      return;
+    }
+
+    const pythonProc = spawned.child;
     
     let outputData = '';
+    let errorData = '';
     
     pythonProc.stdout.on('data', (data) => {
       outputData += data.toString();
     });
     
     pythonProc.stderr.on('data', (data) => {
-      console.error(`Python Stderr: ${data}`);
+      errorData += data.toString();
+      console.error(`Converter Stderr: ${data}`);
+    });
+
+    pythonProc.on('error', (err) => {
+      resolve({
+        status: 'error',
+        message: `无法启动转换引擎：${err.message}`,
+        details: `engine=${engine.kind}`,
+      });
     });
     
     pythonProc.on('close', (code) => {
       try {
         const result = JSON.parse(outputData);
         resolve(result);
-      } catch (err) {
+      } catch {
         resolve({
           status: 'error',
           message: 'Failed to parse python output',
-          details: outputData
+          details: outputData || errorData || `exit code ${code}`
         });
       }
     });

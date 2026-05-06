@@ -1,6 +1,6 @@
 pdf2docx==0.5.8
-comtypes==1.4.1
+comtypes==1.4.1; platform_system == "Windows"
 PyPDF2==3.0.1
 PyMuPDF>=1.23.0
-pywin32>=306
 Pillow>=10.0.0
+pywin32>=306; platform_system == "Windows"

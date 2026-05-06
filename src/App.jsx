@@ -23,17 +23,6 @@ import About from "./pages/About";
 import Membership from "./pages/Membership";
 import { ActivationProvider } from "./lib/featureGate";
 
-function PlaceholderPage({ title }) {
-  return (
-    <div className="flex h-full items-center justify-center p-6 text-slate-500">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
-        <p className="mt-2">正在开发中，敬请期待...</p>
-      </div>
-    </div>
-  );
-}
-
 function ExternalFileListener() {
   const navigate = useNavigate();
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import Icon from "../components/Icon";
 import { addTask } from "../lib/taskStore";
@@ -11,14 +11,6 @@ export default function PdfConvert() {
   const [urlInput, setUrlInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [mode, setMode] = useState("pdf2docx"); // "pdf2docx", "office2pdf", "pdf2txt", "url2pdf"
-
-  const handleFileInput = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setFilePath(selectedFile.path || selectedFile.name);
-    }
-  };
 
   const handleSelectFiles = async () => {
     if (window.electronAPI) {
@@ -49,16 +41,13 @@ export default function PdfConvert() {
     
     try {
       if (window.electronAPI) {
-        let defaultExt = "pdf";
         let defaultName = "转换结果.pdf";
         let filters = [{ name: "Document", extensions: ["pdf"] }];
 
         if (mode === "pdf2docx") {
-          defaultExt = "docx";
           defaultName = file ? file.name.replace(/\.[^/.]+$/, "") + ".docx" : "转换结果.docx";
           filters = [{ name: "Word Document", extensions: ["docx"] }];
         } else if (mode === "pdf2txt") {
-          defaultExt = "txt";
           defaultName = file ? file.name.replace(/\.[^/.]+$/, "") + ".txt" : "转换结果.txt";
           filters = [{ name: "Text File", extensions: ["txt"] }];
         } else if (mode === "office2pdf") {

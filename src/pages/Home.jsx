@@ -155,7 +155,7 @@ export default function Home() {
                     <Icon name="spark" size={15} /> 全民好用 PDF 桌面版
                   </div>
                   <h1 className="mt-5 max-w-xl text-4xl font-black leading-tight">复杂 PDF 操作，做成一个按钮的事。</h1>
-                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/65">支持转换、合并、拆分、压缩、加密、旋转、水印、重排、批量处理、提取图片、图片转换、页码页眉、文字提取、签名、对比。本地优先处理。</p>
+                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/65">支持转换、合并、拆分、压缩、加密、旋转、水印、重排、批量处理、提取图片、图片转换、页码页眉、文字提取、签名、对比。源码开放，官方构建提供会员增值服务。</p>
                 </div>
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Link to="/viewer" className="rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 hover:bg-slate-50 transition">选择 PDF 文件</Link>
@@ -221,7 +221,7 @@ export default function Home() {
             <h2 className="text-lg font-black">使用提示</h2>
             <div className="mt-4 space-y-3">
               {[
-                { icon: "zap", text: "所有操作均在本地完成，文件不会上传到云端" },
+                { icon: "zap", text: "核心 PDF 处理本地完成，会员激活和更新会访问网络" },
                 { icon: "file", text: "支持拖拽文件到页面直接开始处理" },
                 { icon: "search", text: "使用右上角搜索框快速查找工具" },
               ].map((tip, i) => (

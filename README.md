@@ -1,10 +1,10 @@
 <div align="center">
   <img src="public/logo.png" alt="全民好用PDF Logo" width="120" />
   <h1>全民好用 PDF (PDF Tools Pro)</h1>
-  <p><b>您桌面上的终极离线 PDF 生产力利器</b></p>
+  <p><b>本地优先、开源透明的 PDF 桌面生产力工具</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Platform-Windows_10%20%7C%2011-blue.svg" alt="Platform">
+    <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20ARM64-blue.svg" alt="Platform">
     <img src="https://img.shields.io/badge/Framework-Electron%20%7C%20React-61dafb.svg" alt="Framework">
     <img src="https://img.shields.io/badge/Engine-Python_3.14-FFD43B.svg" alt="Engine">
     <img src="https://img.shields.io/badge/License-MIT-success.svg" alt="License">
@@ -15,18 +15,25 @@
 
 ## 🌟 简介
 
-**全民好用 PDF** 是一款专注于 **极致纯净、极致隐私、极速本地化处理** 的现代化桌面 PDF 工具箱。
+**全民好用 PDF** 是一款专注于 **本地优先、隐私友好、开源透明** 的现代化桌面 PDF 工具箱。
 
-市面上大多数好用的 PDF 转换软件要么收费高昂，要么需要把涉及隐私的合同、证件等敏感文件上传到云端处理。本作由此诞生 —— **完全开源、永远免费、100% 断网离线运行**。它的核心计算引擎运行在您本地机器上，极大保障了您的数据隐私与安全。
+项目源码开放，用户可以自行编译使用；官方发布的桌面构建提供会员激活、自动更新、批量处理、高级转换等增值能力，用于支持项目持续维护。核心 PDF 文件处理尽量在本机完成，除激活、更新、网页转 PDF 等明确联网功能外，不会上传用户文档。
+
+## 💼 授权与商业模式
+
+- **源码开放**：开发者可按本仓库代码自行编译、研究和二次开发。
+- **官方构建**：官方发布的安装包包含会员激活、自动更新和增值功能入口。
+- **本地优先**：PDF 合并、拆分、压缩、加密、旋转、水印等核心处理在本机执行。
+- **明确联网**：会员激活、检查更新、下载安装包、URL 转 PDF 等功能会访问网络；普通 PDF 文件不会因此上传到云端。
 
 ## ✨ 核心特性
 
-- 🔒 **全盘本地离线处理**：无需联网，不上传任何字节，安全私密。
+- 🔒 **本地优先处理**：常规 PDF 文件处理在本机完成，不上传用户文档。
 - ⚡ **无缝系统级集成**：
   - 支持设为 **PDF 默认打开方式**，双击秒开。
   - 自动挂载 Windows 右键菜单：**“在 全民好用PDF 中打开”**。
   - **单例模式护航**，防误触无限多开。
-- 🔄 **全能格式互转**：支持 Word / Excel / PPT / TXT / URL 与 PDF 的高质量双向转换（完美保留书签与目录导航）。
+- 🔄 **全能格式互转**：支持 Word / Excel / PPT / TXT / URL 与 PDF 转换（部分能力依赖系统 Office/WPS 或网络）。
 - ✂️ **深度页面处理**：自定义多文件自由合并、精准指定页码拆分与提取。
 - 🗜️ **极速无损瘦身**：基于底层算法的 PDF 智能压缩，多档位自适应瘦身。
 - 🛡️ **安全加解密中心**：提供极其强悍的 **AES-256 级别** PDF 密码锁定与极限解除限制功能。
@@ -38,7 +45,7 @@
 
 ## 🚀 下载与安装
 
-进入本仓库的 **[Releases 页面](../../releases)**，下载最新版的 `全民好用pdf Setup 1.0.0.exe`。
+进入本仓库的 **[Releases 页面](../../releases)**，下载最新版的 `pdf-tools-pro-Setup-x.y.z.exe`。
 双击安装后，直接享受丝滑体验。
 
 > **注意**：由于本软件为个人开源构建，暂未购买微软的数字签名证书。安装时如遇 Windows Defender 拦截，请点击“更多信息” -> “仍要运行”。
@@ -48,11 +55,11 @@
 本项目采用了行业领先的**前后端分离混合架构**：
 
 - **渲染层 (UI)**：`React 19` + `Vite` + `Tailwind CSS`，配合 `lucide-react` 提供精致图标体系。
-- **主进程 (Electron)**：处理系统事件拦截、文件右键菜单关联、托盘通信、与 Python 引擎的异步 IPC 通讯。
+- **主进程 (Electron)**：处理系统事件拦截、文件关联、更新下载、会员激活、与 Python 引擎的异步 IPC 通讯。
 - **核动力引擎 (Python)**：
   - `PyMuPDF (fitz)`：负责所有高强度的 PDF 渲染、压缩、加解密逻辑。
-  - `pdf2docx` & `pywin32`：负责与系统底层的 Office 接口进行无损转换。
-  - **PyInstaller 脱壳封装**：将庞大的 Python 引擎打包成了独立免依赖的 `converter.exe`。因此，用户的电脑上**完全不需要安装任何 Python 环境**即可开箱即用。
+  - `pdf2docx` & `pywin32`：负责 PDF 到 Word 以及 Windows Office/WPS 接口转换。
+  - **跨架构脚本引擎**：安装包默认携带 `converter.py` 和依赖清单，不再把 Windows 专用 `converter.exe` 塞进所有构建；Windows 可选使用独立 exe，Linux / ARM64 使用系统 `python3` 执行同一套脚本。
 
 ## 💻 本地开发指南
 
@@ -60,7 +67,9 @@
 
 ### 环境要求
 - Node.js (v18+)
-- Python (3.10+) 
+- Python (3.10+)
+- Windows Office/WPS 转 PDF：需要本机安装 Microsoft Office 或 WPS。
+- Linux / ARM64：需要可用的 `python3`，并安装 `python_engine/requirements.txt` 中的依赖。
 
 ### 1. 克隆代码库
 ```bash
@@ -87,17 +96,23 @@ cd ..
 npm run dev
 ```
 
-### 5. 独立打包发行 (构建 .exe)
+### 5. 独立打包发行
 ```bash
-# 第一步：打包 Python 引擎为独立的 exe
-cd python_engine
-pyinstaller converter.spec
-
-# 第二步：将前端编译并封装为安装包
-cd ..
+# 当前平台默认构建
 npm run build
+
+# Windows x64 / arm64
+npm run build:win
+
+# Linux x64 / arm64
+npm run build:linux
+
+# 在 Windows 主机上仅做 Linux 解包烟测
+npm run build:linux:dir
 ```
-执行完毕后，您可以在 `dist-electron/` 目录中找到您的专属安装包！
+执行完毕后，您可以在 `dist-electron/` 目录中找到安装包。
+
+> 说明：默认构建采用轻量跨平台 Python 脚本引擎。若需要 Windows 免 Python 运行的官方构建，可单独打包 `python_engine/converter.exe` 并作为平台专用资源发布，不建议把它放入 Linux / ARM64 通用包。AppImage/deb 建议在 Linux 或 CI 环境中构建；Windows 主机可用 `build:linux:dir` 验证 x64/arm64 解包结果。
 
 ## 🤝 致谢与开源说明
 

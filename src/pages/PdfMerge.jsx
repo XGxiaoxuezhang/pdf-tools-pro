@@ -7,25 +7,6 @@ export default function PdfMerge() {
   const [files, setFiles] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSelectFiles = async () => {
-    if (window.electronAPI) {
-      const result = await window.electronAPI.showOpenDialog({
-        properties: ["openFile", "multiSelections"],
-        filters: [{ name: "PDF Files", extensions: ["pdf"] }],
-      });
-      if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-        const loadedFiles = [];
-        for (const filePath of result.filePaths) {
-          const buffer = await window.electronAPI.readFile(filePath);
-          const fileName = filePath.split('\\').pop().split('/').pop();
-          const fileObj = new File([buffer], fileName, { type: "application/pdf" });
-          loadedFiles.push(fileObj);
-        }
-        setFiles(prev => [...prev, ...loadedFiles]);
-      }
-    }
-  };
-
   const handleFileDrop = (e) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
